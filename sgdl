@@ -4,7 +4,12 @@
 get_image() {
 	# $1 - ID
 	[ "$1" = "" ] && return
-	echo $(curl -sL "https://gelbooru.com/index.php?page=post&s=view&id=$1" | grep -Po "href=\"http.*?Original image" | grep -Po "\"http.*?\"" | grep -o "[^\"]*")
+	echo $(curl -sL "https://gelbooru.com/index.php" \
+		-G -d "page=post" -d "s=view" \
+		-d "id=$1" | \
+			grep -Po "href=\"http.*?Original image" | \
+			grep -Po "\"http.*?\"" | \
+			grep -o "[^\"]*")
 }
 
 # Downloads one or multiple id(s)
@@ -21,10 +26,7 @@ download_ids() {
 # $1 - Current PID
 next_pid() {
 	local PID=$1
-	if [ "$PID" = "" ]; then
-		local PID=0
-	fi
-	#echo $(curl -s -L "https://gelbooru.com/index.php?page=post&s=list&tags=$TAGS&pid=$PID" | grep -Po "pid=[0-9]+\" alt=\"next\"" | grep -o "[0-9]*")
+	[ "$PID" = "" ] && local PID=0
 	echo $(( $PID + 42 )) # Hardcoded???
 }
 
@@ -33,7 +35,11 @@ next_pid() {
 get_page_ids() {
 	local PID=$1
 	[ "$PID" = "" ] && local PID=0
-	echo $(curl -sL "https://gelbooru.com/index.php?page=post&s=list&pid=$PID" grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | grep -Po "id=[0-9]+" | grep -o "[0-9]*")
+	echo $(curl -sL "https://gelbooru.com/index.php"\
+		-G -d "page=post" -d "s=list" \
+		-d "pid=$PID" | \
+			grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | \
+			grep -Po "id=[0-9]+" | grep -o "[0-9]*")
 }
 
 # Get ids of posts with specified tags on a specified page
@@ -44,7 +50,12 @@ get_tag_page_ids() {
 	[ "$PID" = "" ] && local PID=0
 	local TAGS=$2
 	[ "$TAGS" = "" ] && return
-	echo $(curl -s -L "https://gelbooru.com/index.php?page=post&s=list&tags=$TAGS&pid=$PID" | grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | grep -Po "id=[0-9]+" | grep -o "[0-9]*")
+	echo $(curl -sL "https://gelbooru.com/index.php" \
+		-G -d "page=post" -d "s=list" \
+		--data-urlencode "tags=$TAGS" \
+		-d "pid=$PID" | \
+			grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" \
+			| grep -Po "id=[0-9]+" | grep -o "[0-9]*")
 }
 
 case $1 in
