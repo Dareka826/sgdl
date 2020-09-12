@@ -1,9 +1,25 @@
 #!/bin/sh
 
-TAGS="$1"
+# Gets image url from an id
+get_image() {
+	# $1 - ID
+	[ "$1" = "" ] && return
+	echo $(curl -sL "https://gelbooru.com/index.php?page=post&s=view&id=$1" | grep -Po "href=\"http.*?Original image" | grep -Po "\"http.*?\"" | grep -o "[^\"]*")
+}
 
+# Downloads one or multiple id(s)
+# $1 - IDs
+download_ids() {
+	for id in $1; do
+		local URL=$(get_image $id)
+		printf "\n[$id]: $URL\n"
+		curl -LO $URL
+	done
+}
+
+# Gets the next page id from the current one
+# $1 - Current PID
 next_pid() {
-	# $1 - Current PID
 	local PID=$1
 	if [ "$PID" = "" ]; then
 		local PID=0
@@ -12,38 +28,51 @@ next_pid() {
 	echo $(( $PID + 42 )) # Hardcoded???
 }
 
-page_ids() {
-	# $1 - PID
+# Gets ids of posts on a specified page
+# $1 - PID
+get_page_ids() {
 	local PID=$1
-	if [ "$PID" = "" ]; then
-		local PID=0
-	fi
+	[ "$PID" = "" ] && local PID=0
+	echo $(curl -sL "https://gelbooru.com/index.php?page=post&s=list&pid=$PID" grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | grep -Po "id=[0-9]+" | grep -o "[0-9]*")
+}
+
+# Get ids of posts with specified tags on a specified page
+# $1 - PID
+# $2 - TAGS
+get_tag_page_ids() {
+	local PID=$1
+	[ "$PID" = "" ] && local PID=0
+	local TAGS=$2
+	[ "$TAGS" = "" ] && return
 	echo $(curl -s -L "https://gelbooru.com/index.php?page=post&s=list&tags=$TAGS&pid=$PID" | grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | grep -Po "id=[0-9]+" | grep -o "[0-9]*")
 }
 
-get_image() {
-	# $1 - ID
-	[ "$1" = "" ] && return
-	echo $(curl -sL "https://gelbooru.com/index.php?page=post&s=view&id=$1" | grep -Po "href=\"http.*?Original image" | grep -Po "\"http.*?\"" | grep -o "[^\"]*")
-}
+case $1 in
+	"id")
+		download_ids "$2"
+		;;
+	"page")
+		download_ids $(get_page_ids $2)
+		;;
+	"tags")
+		if [ "$3" = ""]; then
+			PID=0
+			IDS=$(get_tag_page_ids $PID "$2")
+			while [ "$IDS" != "" ]; do
+				printf "\n= PID: $PID\n\n"
+				download_ids "$IDS"
+				PID=$(next_pid $PID)
+				IDS=$(get_tag_page_ids $PID "$2")
+			done
+		else
+			download_ids $(get_tag_page_ids $3 "$2")
+		fi
+		;;
+	*)
+		printf "usage:\n"
+		printf "  sgdl id <post_id/post_ids>\n"
+		printf "  sgdl page <page_id>\n"
+		printf "  sgdl tags <tags> [page id]\n"
+		;;
+esac
 
-download_ids() {
-	# $1 - IDs
-	for id in $1; do
-		local URL=$(get_image $id)
-		printf "\n[$id]: $URL\n"
-		curl -LO $URL
-	done
-}
-
-PID=0
-IDS=$(page_ids $PID)
-while [ "$IDS" != "" ]; do
-	printf "\n=====\n"
-	printf "= PAGE: $PID\n"
-	printf "=====\n\n"
-	download_ids "$IDS"
-
-	PID=$(next_pid $PID)
-	IDS=$(page_ids $PID)
-done
