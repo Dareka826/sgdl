@@ -55,7 +55,7 @@ case $1 in
 		download_ids $(get_page_ids $2)
 		;;
 	"tags")
-		if [ "$3" = ""]; then
+		if [ "$3" = "" ]; then
 			PID=0
 			IDS=$(get_tag_page_ids $PID "$2")
 			while [ "$IDS" != "" ]; do
