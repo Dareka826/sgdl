@@ -25,6 +25,7 @@ usage() {
 	echo "  -f               Enable fringe content"
 	echo "  -o <output_dir>  Change where the files are saved (default '.')"
 	echo "  -v               Verbose"
+	echo ""
 
 	exit 0
 }
