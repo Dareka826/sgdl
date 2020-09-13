@@ -5,18 +5,19 @@ usage() {
 	echo "Simple Gelbooru Downloader"
 	echo ""
 	echo "Usage:"
-	echo "  sgdl [-v] [-f] -i <id>..."
-	echo "  sgdl [-v] [-f] -p <pid>"
-	echo "  sgdl [-v] [-f] -t <tags>"
-	echo "  sgdl [-v] [-f] -t <tags> -p <pid>"
+	echo "  sgdl [-v] [-f] -i <id>... [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] -p <pid> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] -t <tags> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] -t <tags> -p <pid> [-o <output_dir>]"
 	echo ""
 	echo "Options:"
-	echo "  -h            Show this text"
-	echo "  -i <id>...    Specify the id/ids of posts to download"
-	echo "  -p <pid>      Specify a page id"
-	echo "  -t <tags>     Specify tags to search with"
-	echo "  -f            Enable fringe content"
-	echo "  -v            Verbose"
+	echo "  -h               Show this text"
+	echo "  -i <id>...       Specify the id/ids of posts to download"
+	echo "  -p <pid>         Specify a page id"
+	echo "  -t <tags>        Specify tags to search with"
+	echo "  -f               Enable fringe content"
+	echo "  -o <output_dir>  Change where the files are saved (default '.')"
+	echo "  -v               Verbose"
 
 	exit 0
 }
@@ -100,12 +101,14 @@ IDS=""
 PID=""
 TAGS=""
 VERBOSE=0
+OUTDIR="."
 while [ "$1" != "" ]; do
 	case $1 in
 		"-f") FRINGE="yup" ;;
 		"-i") IDS="$2"; shift ;;
 		"-p") PID="$2"; shift ;;
 		"-t") TAGS="$2"; shift ;;
+		"-o") OUTDIR="$2"; shift ;;
 		"-v") VERBOSE=1 ;;
 		"-h") usage ;;
 	esac
@@ -113,6 +116,9 @@ while [ "$1" != "" ]; do
 done
 
 COMPLETED_SUCCESSFULLY=1
+
+INITDIR="$(pwd)"
+cd $OUTDIR
 
 if [ "$IDS" != "" ]; then
 	# ID mode
@@ -144,6 +150,8 @@ else
 		fi
 	fi
 fi
+
+cd $INITDIR
 
 if [ $COMPLETED_SUCCESSFULLY = 0 ]; then
 	echo "[I]: Exiting with a non-zero status due to prevoius errors"
