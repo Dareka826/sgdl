@@ -1,13 +1,14 @@
 #!/bin/sh
 
+# Print usage based on docopt
 usage() {
 	echo "Simple Gelbooru Downloader"
 	echo ""
 	echo "Usage:"
-	echo "  sgdl [-f|-s] -i <id>..."
-	echo "  sgdl [-f|-s] -p <pid>"
-	echo "  sgdl [-f|-s] -t <tags>"
-	echo "  sgdl [-f|-s] -t <tags> -p <pid>"
+	echo "  sgdl [-f] -i <id>..."
+	echo "  sgdl [-f] -p <pid>"
+	echo "  sgdl [-f] -t <tags>"
+	echo "  sgdl [-f] -t <tags> -p <pid>"
 	echo ""
 	echo "Options:"
 	echo "  -h            Show this text"
@@ -15,7 +16,6 @@ usage() {
 	echo "  -p <pid>      Specify a page id"
 	echo "  -t <tags>     Specify tags to search with"
 	echo "  -f            Enable fringe content"
-	echo "  -s            Enable safe mode"
 
 	exit 0
 }
@@ -85,11 +85,9 @@ FRINGE="nope"
 IDS=""
 PID=""
 TAGS=""
-SAFE="nope"
 while [ "$1" != "" ]; do
 	case $1 in
 		"-f") FRINGE="yup" ;;
-		"-s") SAFE="yup" ;;
 		"-i") IDS="$2"; shift ;;
 		"-p") PID="$2"; shift ;;
 		"-t") TAGS="$2"; shift ;;
