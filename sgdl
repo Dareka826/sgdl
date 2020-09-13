@@ -25,8 +25,10 @@ usage() {
 get_image() {
 	# $1 - ID
 	[ "$1" = "" ] && return
+
 	VOPT="-s"
 	[ $VERBOSE = 1 ] && VOPT=""
+
 	echo $(curl $VOPT -L "https://gelbooru.com/index.php" \
 		--cookie "fringeBenefits=$FRINGE" \
 		-G -d "page=post" -d "s=view" \
@@ -41,10 +43,12 @@ get_image() {
 download_ids() {
 	VOPT="-s"
 	[ $VERBOSE = 1 ] && VOPT=""
+
 	for ID in $1; do
 		local URL=$(get_image $ID)
 		echo "[I]: Downloading [$ID]: $URL" 1>&2
 		curl $VOPT -LO $URL
+
 		if [ $? != 0 ]; then
 			echo "[E]: An error occured when downloading [$ID]" 1>&2
 			COMPLETED_SUCCESSFULLY=0
@@ -57,8 +61,10 @@ download_ids() {
 get_page_ids() {
 	local PID=$1
 	[ "$PID" = "" ] && local PID=0
+
 	VOPT="-s"
 	[ $VERBOSE = 1 ] && VOPT=""
+
 	echo $(curl $VOPT -L "https://gelbooru.com/index.php"\
 		-G -d "page=post" -d "s=list" \
 		--cookie "fringeBenefits=$FRINGE" \
@@ -73,10 +79,13 @@ get_page_ids() {
 get_tag_page_ids() {
 	local PID=$1
 	[ "$PID" = "" ] && local PID=0
+
 	local TAGS=$2
 	[ "$TAGS" = "" ] && return
+
 	VOPT="-s"
 	[ $VERBOSE = 1 ] && VOPT=""
+
 	echo $(curl $VOPT -L "https://gelbooru.com/index.php" \
 		-G -d "page=post" -d "s=list" \
 		--cookie "fringeBenefits=$FRINGE" \
@@ -110,7 +119,7 @@ if [ "$IDS" != "" ]; then
 	echo "[I]: Running in id mode"
 	download_ids "$IDS"
 else
-	if [ "$PID" != "" ]; then 
+	if [ "$PID" != "" ]; then
 		if [ "$TAGS" = "" ]; then
 			# Page mode [not tested, but should work]
 			echo "[I]: Running in page mode"
@@ -127,7 +136,7 @@ else
 			PID=0
 			IDS=$(get_tag_page_ids $PID "$TAGS")
 			while [ "$IDS" != "" ]; do
-				printf "\n[I] Page ID: $PID\n\n"
+				printf "\n[I] Page ID: $PID (Page $(($PID / 42))\n\n"
 				download_ids "$IDS"
 				PID=$(($PID + 42))
 				IDS=$(get_tag_page_ids $PID "$TAGS")
