@@ -103,21 +103,21 @@ else
 	if [ "$PID" != "" ]; then 
 		if [ "$TAGS" = "" ]; then
 			# Page mode
-			download_ids $(get_page_ids $2)
+			download_ids $(get_page_ids $PID)
 		else
 			# Tags + pid
-			download_ids $(get_tag_page_ids $3 "$2")
+			download_ids $(get_tag_page_ids $PID "$TAGS")
 		fi
 	else
 		if [ "$TAGS" != "" ]; then
 			# Tag mode
 			PID=0
-			IDS=$(get_tag_page_ids $PID "$2")
+			IDS=$(get_tag_page_ids $PID "$TAGS")
 			while [ "$IDS" != "" ]; do
 				printf "\n= PID: $PID\n\n"
 				download_ids "$IDS"
 				PID=$(next_pid $PID)
-				IDS=$(get_tag_page_ids $PID "$2")
+				IDS=$(get_tag_page_ids $PID "$TAGS")
 			done
 		fi
 	fi
