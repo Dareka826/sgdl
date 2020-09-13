@@ -5,6 +5,7 @@ get_image() {
 	# $1 - ID
 	[ "$1" = "" ] && return
 	echo $(curl -sL "https://gelbooru.com/index.php" \
+		--cookie "fringeBenefits=$FRINGE" \
 		-G -d "page=post" -d "s=view" \
 		-d "id=$1" | \
 			grep -Po "href=\"http.*?Original image" | \
@@ -37,6 +38,7 @@ get_page_ids() {
 	[ "$PID" = "" ] && local PID=0
 	echo $(curl -sL "https://gelbooru.com/index.php"\
 		-G -d "page=post" -d "s=list" \
+		--cookie "fringeBenefits=$FRINGE" \
 		-d "pid=$PID" | \
 			grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | \
 			grep -Po "id=[0-9]+" | grep -o "[0-9]*")
@@ -52,12 +54,14 @@ get_tag_page_ids() {
 	[ "$TAGS" = "" ] && return
 	echo $(curl -sL "https://gelbooru.com/index.php" \
 		-G -d "page=post" -d "s=list" \
+		--cookie "fringeBenefits=$FRINGE" \
 		--data-urlencode "tags=$TAGS" \
 		-d "pid=$PID" | \
 			grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" \
 			| grep -Po "id=[0-9]+" | grep -o "[0-9]*")
 }
 
+FRINGE="yup"
 case $1 in
 	"id")
 		download_ids "$2"
