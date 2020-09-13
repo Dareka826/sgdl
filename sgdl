@@ -118,7 +118,8 @@ done
 COMPLETED_SUCCESSFULLY=1
 
 INITDIR="$(pwd)"
-cd $OUTDIR
+mkdir -p "$OUTDIR"
+cd "$OUTDIR"
 
 if [ "$IDS" != "" ]; then
 	# ID mode
@@ -151,7 +152,7 @@ else
 	fi
 fi
 
-cd $INITDIR
+cd "$INITDIR"
 
 if [ $COMPLETED_SUCCESSFULLY = 0 ]; then
 	echo "[I]: Exiting with a non-zero status due to prevoius errors"
