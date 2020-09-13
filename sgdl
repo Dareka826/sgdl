@@ -1,5 +1,25 @@
 #!/bin/sh
 
+usage() {
+	echo "Simple Gelbooru Downloader"
+	echo ""
+	echo "Usage:"
+	echo "  sgdl [-f|-s] -i <id>..."
+	echo "  sgdl [-f|-s] -p <pid>"
+	echo "  sgdl [-f|-s] -t <tags>"
+	echo "  sgdl [-f|-s] -t <tags> -p <pid>"
+	echo ""
+	echo "Options:"
+	echo "  -h            Show this text"
+	echo "  -i <id>...    Specify the id/ids of posts to download"
+	echo "  -p <pid>      Specify a page id"
+	echo "  -t <tags>     Specify tags to search with"
+	echo "  -f            Enable fringe content"
+	echo "  -s            Enable safe mode"
+
+	exit 0
+}
+
 # Gets image url from an id
 get_image() {
 	# $1 - ID
@@ -61,16 +81,38 @@ get_tag_page_ids() {
 			| grep -Po "id=[0-9]+" | grep -o "[0-9]*")
 }
 
-FRINGE="yup"
-case $1 in
-	"id")
-		download_ids "$2"
-		;;
-	"page")
-		download_ids $(get_page_ids $2)
-		;;
-	"tags")
-		if [ "$3" = "" ]; then
+FRINGE="nope"
+IDS=""
+PID=""
+TAGS=""
+SAFE="nope"
+while [ "$1" != "" ]; do
+	case $1 in
+		"-f") FRINGE="yup" ;;
+		"-s") SAFE="yup" ;;
+		"-i") IDS="$2"; shift ;;
+		"-p") PID="$2"; shift ;;
+		"-t") TAGS="$2"; shift ;;
+		"-h") usage ;;
+	esac
+	shift
+done
+
+if [ "$IDS" != "" ]; then
+	# ID mode
+	download_ids "$IDS"
+else
+	if [ "$PID" != "" ]; then 
+		if [ "$TAGS" = "" ]; then
+			# Page mode
+			download_ids $(get_page_ids $2)
+		else
+			# Tags + pid
+			download_ids $(get_tag_page_ids $3 "$2")
+		fi
+	else
+		if [ "$TAGS" != "" ]; then
+			# Tag mode
 			PID=0
 			IDS=$(get_tag_page_ids $PID "$2")
 			while [ "$IDS" != "" ]; do
@@ -79,15 +121,7 @@ case $1 in
 				PID=$(next_pid $PID)
 				IDS=$(get_tag_page_ids $PID "$2")
 			done
-		else
-			download_ids $(get_tag_page_ids $3 "$2")
 		fi
-		;;
-	*)
-		printf "usage:\n"
-		printf "  sgdl id <post_id/post_ids>\n"
-		printf "  sgdl page <page_id>\n"
-		printf "  sgdl tags <tags> [page id]\n"
-		;;
-esac
+	fi
+fi
 
