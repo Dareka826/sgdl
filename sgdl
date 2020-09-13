@@ -136,7 +136,7 @@ else
 			PID=0
 			IDS=$(get_tag_page_ids $PID "$TAGS")
 			while [ "$IDS" != "" ]; do
-				printf "\n[I] Page ID: $PID (Page $(($PID / 42))\n\n"
+				printf "\n[I] Page ID: $PID (Page $(($PID / 42)))\n\n"
 				download_ids "$IDS"
 				PID=$(($PID + 42))
 				IDS=$(get_tag_page_ids $PID "$TAGS")
