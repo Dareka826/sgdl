@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Check for curl
+which curl >/dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "[E]: Curl not found, please install it"
+	exit -1
+fi
+
 # Print usage based on docopt
 usage() {
 	echo "Simple Gelbooru Downloader"
