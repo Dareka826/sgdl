@@ -5,10 +5,10 @@ usage() {
 	echo "Simple Gelbooru Downloader"
 	echo ""
 	echo "Usage:"
-	echo "  sgdl [-f] -i <id>..."
-	echo "  sgdl [-f] -p <pid>"
-	echo "  sgdl [-f] -t <tags>"
-	echo "  sgdl [-f] -t <tags> -p <pid>"
+	echo "  sgdl [-v] [-f] -i <id>..."
+	echo "  sgdl [-v] [-f] -p <pid>"
+	echo "  sgdl [-v] [-f] -t <tags>"
+	echo "  sgdl [-v] [-f] -t <tags> -p <pid>"
 	echo ""
 	echo "Options:"
 	echo "  -h            Show this text"
@@ -16,6 +16,7 @@ usage() {
 	echo "  -p <pid>      Specify a page id"
 	echo "  -t <tags>     Specify tags to search with"
 	echo "  -f            Enable fringe content"
+	echo "  -v            Verbose"
 
 	exit 0
 }
@@ -24,7 +25,9 @@ usage() {
 get_image() {
 	# $1 - ID
 	[ "$1" = "" ] && return
-	echo $(curl -sL "https://gelbooru.com/index.php" \
+	VOPT="-s"
+	[ $VERBOSE = 1 ] && VOPT=""
+	echo $(curl $VOPT -L "https://gelbooru.com/index.php" \
 		--cookie "fringeBenefits=$FRINGE" \
 		-G -d "page=post" -d "s=view" \
 		-d "id=$1" | \
@@ -36,10 +39,12 @@ get_image() {
 # Downloads one or multiple id(s)
 # $1 - IDs
 download_ids() {
+	VOPT="-s"
+	[ $VERBOSE = 1 ] && VOPT=""
 	for ID in $1; do
 		local URL=$(get_image $ID)
 		echo "[I]: Downloading [$ID]: $URL" 1>&2
-		curl -sLO $URL
+		curl $VOPT -LO $URL
 		if [ $? != 0 ]; then
 			echo "[E]: An error occured when downloading [$ID]" 1>&2
 			COMPLETED_SUCCESSFULLY=0
@@ -47,20 +52,14 @@ download_ids() {
 	done
 }
 
-# Gets the next page id from the current one
-# $1 - Current PID
-next_pid() {
-	local PID=$1
-	[ "$PID" = "" ] && local PID=0
-	echo $(( $PID + 42 )) # Hardcoded???
-}
-
 # Gets ids of posts on a specified page
 # $1 - PID
 get_page_ids() {
 	local PID=$1
 	[ "$PID" = "" ] && local PID=0
-	echo $(curl -sL "https://gelbooru.com/index.php"\
+	VOPT="-s"
+	[ $VERBOSE = 1 ] && VOPT=""
+	echo $(curl $VOPT -L "https://gelbooru.com/index.php"\
 		-G -d "page=post" -d "s=list" \
 		--cookie "fringeBenefits=$FRINGE" \
 		-d "pid=$PID" | \
@@ -76,7 +75,9 @@ get_tag_page_ids() {
 	[ "$PID" = "" ] && local PID=0
 	local TAGS=$2
 	[ "$TAGS" = "" ] && return
-	echo $(curl -sL "https://gelbooru.com/index.php" \
+	VOPT="-s"
+	[ $VERBOSE = 1 ] && VOPT=""
+	echo $(curl $VOPT -L "https://gelbooru.com/index.php" \
 		-G -d "page=post" -d "s=list" \
 		--cookie "fringeBenefits=$FRINGE" \
 		--data-urlencode "tags=$TAGS" \
@@ -89,12 +90,14 @@ FRINGE="nope"
 IDS=""
 PID=""
 TAGS=""
+VERBOSE=0
 while [ "$1" != "" ]; do
 	case $1 in
 		"-f") FRINGE="yup" ;;
 		"-i") IDS="$2"; shift ;;
 		"-p") PID="$2"; shift ;;
 		"-t") TAGS="$2"; shift ;;
+		"-v") VERBOSE=1 ;;
 		"-h") usage ;;
 	esac
 	shift
@@ -109,7 +112,7 @@ if [ "$IDS" != "" ]; then
 else
 	if [ "$PID" != "" ]; then 
 		if [ "$TAGS" = "" ]; then
-			# Page mode
+			# Page mode [not tested, but should work]
 			echo "[I]: Running in page mode"
 			download_ids "$(get_page_ids $(($PID * 42)))"
 		else
@@ -124,9 +127,9 @@ else
 			PID=0
 			IDS=$(get_tag_page_ids $PID "$TAGS")
 			while [ "$IDS" != "" ]; do
-				printf "\n= PID: $PID\n\n"
+				printf "\n[I] Page ID: $PID\n\n"
 				download_ids "$IDS"
-				PID=$(next_pid $PID)
+				PID=$(($PID + 42))
 				IDS=$(get_tag_page_ids $PID "$TAGS")
 			done
 		fi
