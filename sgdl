@@ -36,10 +36,14 @@ get_image() {
 # Downloads one or multiple id(s)
 # $1 - IDs
 download_ids() {
-	for id in $1; do
-		local URL=$(get_image $id)
-		printf "\n[$id]: $URL\n"
-		curl -LO $URL
+	for ID in $1; do
+		local URL=$(get_image $ID)
+		echo "[I]: Downloading [$ID]: $URL" 1>&2
+		curl -sLO $URL
+		if [ $? != 0 ]; then
+			echo "[E]: An error occured when downloading [$ID]" 1>&2
+			COMPLETED_SUCCESSFULLY=0
+		fi
 	done
 }
 
@@ -96,21 +100,27 @@ while [ "$1" != "" ]; do
 	shift
 done
 
+COMPLETED_SUCCESSFULLY=1
+
 if [ "$IDS" != "" ]; then
 	# ID mode
+	echo "[I]: Running in id mode"
 	download_ids "$IDS"
 else
 	if [ "$PID" != "" ]; then 
 		if [ "$TAGS" = "" ]; then
 			# Page mode
-			download_ids $(get_page_ids $PID)
+			echo "[I]: Running in page mode"
+			download_ids "$(get_page_ids $(($PID * 42)))"
 		else
 			# Tags + pid
-			download_ids $(get_tag_page_ids $PID "$TAGS")
+			echo "[I]: Running in tag + page mode"
+			download_ids "$(get_tag_page_ids $(($PID * 42)) "$TAGS")"
 		fi
 	else
 		if [ "$TAGS" != "" ]; then
 			# Tag mode
+			echo "[I]: Running in tag mode"
 			PID=0
 			IDS=$(get_tag_page_ids $PID "$TAGS")
 			while [ "$IDS" != "" ]; do
@@ -121,5 +131,10 @@ else
 			done
 		fi
 	fi
+fi
+
+if [ $COMPLETED_SUCCESSFULLY = 0 ]; then
+	echo "[I]: Exiting with a non-zero status due to prevoius errors"
+	exit 1
 fi
 
