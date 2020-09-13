@@ -3,7 +3,7 @@
 # Check for curl
 which curl >/dev/null 2>&1
 if [ $? != 0 ]; then
-	echo "[E]: Curl not found, please install it"
+	echo "[E]: Curl not found, please install it" 1>&2
 	exit -1
 fi
 
@@ -166,7 +166,7 @@ fi
 cd "$INITDIR"
 
 if [ $COMPLETED_SUCCESSFULLY = 0 ]; then
-	echo "[I]: Exiting with a non-zero status due to prevoius errors"
+	echo "[I]: Exiting with a non-zero status due to prevoius errors" 1>&2
 	exit 1
 fi
 
