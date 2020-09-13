@@ -103,6 +103,9 @@ get_tag_page_ids() {
 			| grep -Po "id=[0-9]+" | grep -o "[0-9]*")
 }
 
+# Display usage if no arguments present
+[ "$2" = "" ] && usage
+
 FRINGE="nope"
 IDS=""
 PID=""
