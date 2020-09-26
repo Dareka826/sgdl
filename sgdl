@@ -12,10 +12,10 @@ usage() {
 	echo "Simple Gelbooru Downloader"
 	echo ""
 	echo "Usage:"
-	echo "  sgdl [-v] [-f] -i <id>... [-o <output_dir>]"
-	echo "  sgdl [-v] [-f] -p <pid> [-o <output_dir>]"
-	echo "  sgdl [-v] [-f] -t <tags> [-o <output_dir>]"
-	echo "  sgdl [-v] [-f] -t <tags> -p <pid> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -i <id>... [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -p <pid> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -t <tags> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -t <tags> -p <pid> [-o <output_dir>]"
 	echo ""
 	echo "Options:"
 	echo "  -h               Show this text"
@@ -25,6 +25,7 @@ usage() {
 	echo "  -f               Enable fringe content"
 	echo "  -o <output_dir>  Change where the files are saved (default '.')"
 	echo "  -v               Verbose"
+	echo "  -r               Rename all of the downloaded images to their IDs"
 	echo ""
 
 	exit 0
@@ -56,7 +57,12 @@ download_ids() {
 	for ID in $1; do
 		local URL=$(get_image $ID)
 		echo "[I]: Downloading [$ID]: $URL" 1>&2
-		curl $VOPT -LO $URL
+
+		if [ "$RENID" = "0" ]; then
+			curl $VOPT -LO $URL
+		else
+			curl $VOPT -L $URL > "$ID.$(echo "$URL" | rev | cut -d'.' -f-1 | rev)"
+		fi
 
 		if [ $? != 0 ]; then
 			echo "[E]: An error occured when downloading [$ID]" 1>&2
@@ -113,6 +119,7 @@ PID=""
 TAGS=""
 VERBOSE=0
 OUTDIR="."
+RENID=0
 while [ "$1" != "" ]; do
 	case $1 in
 		"-f") FRINGE="yup" ;;
@@ -121,6 +128,7 @@ while [ "$1" != "" ]; do
 		"-t") TAGS="$2"; shift ;;
 		"-o") OUTDIR="$2"; shift ;;
 		"-v") VERBOSE=1 ;;
+		"-r") RENID=1 ;;
 		"-h") usage ;;
 	esac
 	shift
