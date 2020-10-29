@@ -1,10 +1,19 @@
 #!/bin/sh
 
-# Check for curl
-which curl >/dev/null 2>&1
-if [ $? != 0 ]; then
-	echo "[E]: Curl not found, please install it" 1>&2
-	exit -1
+# Check for missing dependencies
+DEPENDENCIES="curl"
+DEPENDENCIES_SATISFIED=1
+for DEPENDENCY in $DEPENDENCIES; do
+	if ! command -v $DEPENDENCY >/dev/null 2>&1; then
+		echo "[E]: Missing dependency: $DEPENDENCY" 1>&2
+		DEPENDENCIES_SATISFIED=0
+	fi
+done
+
+# Exit if any dependenices are missing
+if [ $DEPENDENCIES_SATISFIED != 1 ]; then
+	echo "[I]: Exiting with an exit code of 1 due to missing dependencies"
+	exit 1
 fi
 
 # Print usage based on docopt
