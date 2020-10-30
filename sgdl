@@ -1,189 +1,293 @@
 #!/usr/bin/env bash
 
-# Check for missing dependencies
-DEPENDENCIES="curl"
-DEPENDENCIES_SATISFIED=1
-for DEPENDENCY in $DEPENDENCIES; do
-	if ! command -v $DEPENDENCY >/dev/null 2>&1; then
-		echo "[E]: Missing dependency: $DEPENDENCY" 1>&2
-		DEPENDENCIES_SATISFIED=0
-	fi
-done
+VERSION="2.0"
+RETRY_TIMES=5
 
-# Exit if any dependenices are missing
-if [ $DEPENDENCIES_SATISFIED != 1 ]; then
-	echo "[I]: Exiting with an exit code of 1 due to missing dependencies"
-	exit 1
-fi
+##### Check for missing dependencies
+# $1 - DEPENDENCIES
+## Exit codes
+# 1 - there is a dependency missing
+# 2 - no dependency list passed
+check_dependencies() {
+	[ "$1" = "" ] && echo "[E]: No dependencies to check given" >&2 && return 2
+	local DEPENDENCIES_SATISFIED=1
+	for DEPENDENCY in $1; do
+		if ! command -v $DEPENDENCY >/dev/null 2>&1; then
+			echo "[E]: Missing dependency: $DEPENDENCY" 1>&2
+			local DEPENDENCIES_SATISFIED=0
+		fi
+	done
 
-# Print usage based on docopt
+	[ $DEPENDENCIES_SATISFIED != 1 ] && return 1 || return 0
+}
+
+##### Print usage [docopt format]
 usage() {
 	echo "Simple Gelbooru Downloader"
+	echo "version: $VERSION"
 	echo ""
 	echo "Usage:"
-	echo "  sgdl [-v] [-f] [-r] -i <id>... [-o <output_dir>]"
-	echo "  sgdl [-v] [-f] [-r] -p <pid> [-o <output_dir>]"
-	echo "  sgdl [-v] [-f] [-r] -t <tags> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -i <id/ids> [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -p <pid>    [-o <output_dir>]"
+	echo "  sgdl [-v] [-f] [-r] -t <tags>   [-o <output_dir>]"
 	echo "  sgdl [-v] [-f] [-r] -t <tags> -p <pid> [-o <output_dir>]"
 	echo ""
 	echo "Options:"
 	echo "  -h               Show this text"
-	echo "  -i <id>...       Specify the id/ids of posts to download"
+	echo "  -i <id/ids>      Specify the id/ids of posts to download"
 	echo "  -p <pid>         Specify a page id"
 	echo "  -t <tags>        Specify tags to search with"
-	echo "  -f               Enable fringe content"
+	echo "  -f               Enable fringe content cookie"
 	echo "  -o <output_dir>  Change where the files are saved (default '.')"
 	echo "  -v               Verbose"
-	echo "  -r               Rename all of the downloaded images to their IDs"
+	echo "  -V               Prints the script version"
+	#echo "  -r               Don't use ids as the file name"
+	#echo "  -c               Save the images in chronological order"
 	echo ""
-
-	exit 0
 }
 
-# Gets image url from an id
+##### Gets image url from an id
+# $1 - ID
+# $2 - FRINGE?
+# $3 - RETRY_TIMES
+# $4 - VERBOSE?
+## Exit codes
+# 1 - No ID supplied
+# 2 - Failed to fetch url
 get_image() {
-	# $1 - ID
-	[ "$1" = "" ] && return
+	[ "$4" = 1 ] && echo "[I]: Function get_image()" 1>&2
 
-	VOPT="-s"
-	[ $VERBOSE = 1 ] && VOPT=""
+	[ "$4" = 1 -a "$1" = "" ] && echo "[E]: No ID given" 1>&2
+	[ "$1" = "" ] && return 1 # Exit if no ID is supplied
 
-	echo $(curl $VOPT -L "https://gelbooru.com/index.php" \
-		--cookie "fringeBenefits=$FRINGE" \
-		-G -d "page=post" -d "s=view" \
-		-d "id=$1" | \
-			grep -Po "href=\"http.*?Original image" | \
-			grep -Po "\"http.*?\"" | \
-			grep -o "[^\"]*")
+	local FRINGE="nope" ; [ "$2" = 1 ] && local FRINGE="yup"
+	local RETRY_TIMES=5 ; [ "$3" != "" ] && local RETRY_TIMES=$3
+	local VOPT="-s" ; [ "$4" = 1 ] && local VOPT=""
+
+	echo "FRINGE: $FRINGE" >&2
+
+	[ "$4" = 1 ] && echo "[I]: Getting image from id" 1>&2
+
+	# Try a number of times before giving up
+	local SUCCESS=0
+	while [ "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ]; do
+		local URL="$(curl $VOPT -L "https://gelbooru.com/index.php" \
+			--cookie "fringeBenefits=$FRINGE" \
+			-G -d "page=post" -d "s=view" -d "id=$1" | \
+				grep -Po "href=\"http.*?Original image" | \
+				grep -Po "\"http.*?\"" | \
+				grep -o "[^\"]*")"
+
+		[ "$URL" != "" ] && local SUCCESS=1
+		local RETRY_TIMES=$((RETRY_TIMES - 1))
+
+		[ "$4" = 1 -a "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ] && echo "[W]: curl failed, retrying..." 1>&2
+	done
+
+	if [ "$SUCCESS" = 0 ]; then
+		echo "[E]: curl failed to fetch image url" 1>&2
+		return 2
+	fi
+
+	[ "$4" = 1 ] && echo "[I]: curl succedeed in getting image url from id" 1>&2
+
+	[ "$SUCCESS" = 1 ] && echo "$URL"
 }
 
-# Downloads one or multiple id(s)
-# $1 - IDs
+##### Downloads one or multiple id(s)
+# $1 - id/ids
+# $2 - fringe?
+# $3 - retry_times
+# $4 - directory # default '.'
+# $5 - verbose?
+## Error codes
+# 1 - no ID supplied
+# 2 - Couldn't fetch an url
+# 3 - cURL error
+# 4 - target directory doesn't exist
 download_ids() {
-	VOPT="-s"
-	[ $VERBOSE = 1 ] && VOPT=""
+	[ "$5" = 1 ] && echo "[I]: Function download_ids()" 1>&2
+
+	[ "$5" = 1 -a "$1" = "" ] && echo "[E]: No ID/IDS given" 1>&2
+	[ "$1" = "" ] && return 1 # Exit if no ID/IDS supplied
+
+	local VOPT="-s" ; [ "$5" = 1 ] && local VOPT=""
+
+	local DIR="." ; [ "$4" != "" ] && local DIR="$4"
+	[ "$5" = 1 ] && [ ! -d "$DIR" ] && echo "[E]: Specified directory does not exist" 1>&2
+	[ -d "$DIR" ] || return 4 # Check if DIR exists and is a directory
 
 	for ID in $1; do
-		local URL=$(get_image $ID)
+		[ "$5" = 1 ] && echo "[I]: Fetching url of id: [$ID]" 1>&2
+
+		local URL=$(get_image $ID $2 $3 $5)
+		if [ "$URL" = "" ]; then
+			echo "[E]: Failed to fetch the url of id: [$ID]"
+			return 2
+		fi
+
+		[ "$5" = 1 ] && echo "[I]: Fetched successfully" 1>&2
 		echo "[I]: Downloading [$ID]: $URL" 1>&2
 
-		if [ "$RENID" = "0" ]; then
-			curl $VOPT -LO $URL
-		else
-			curl $VOPT -L $URL > "$ID.$(echo "$URL" | rev | cut -d'.' -f-1 | rev)"
+		# Try multiple times with curl if the url is ok
+		local SUCCESS=0
+		local RETRY_TIMES=$3
+		# While the command wasn't successful and there are retries left
+		while [ "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ]; do
+			[ "$5" = 1 ] && echo "[I]: Downloading image" 1>&2
+
+			# Download the image and save it to ID.<extension>
+			curl $VOPT -L $URL > "$DIR/$ID.$(echo "$URL" | rev | cut -d'.' -f-1 | rev)"
+
+			[ $? = 0 ] && SUCCESS=1
+			local RETRY_TIMES=$((RETRY_TIMES - 1))
+			[ "$5" = 1 -a "$SUCCESS" = 0 ] && echo "[W]: curl failed, retrying..." 1>&2
+		done
+
+		if [ "$SUCCESS" = 0 ]; then
+			echo "[E]: cURL failed to download the image" 1>&2
+			return 3
 		fi
 
-		if [ $? != 0 ]; then
-			echo "[E]: An error occured when downloading [$ID]" 1>&2
-			COMPLETED_SUCCESSFULLY=0
-		fi
+		[ "$5" = 1 ] && echo "[I]: Downloaded id: [$ID]" 1>&2
 	done
+	return 0
 }
 
-# Gets ids of posts on a specified page
+##### Get ids from a page
 # $1 - PID
+# $2 - FRINGE?
+# $3 - RETRY_TIMES
+# $4 - TAG_MODE?
+# $5 - TAGS
+# $6 - VERBOSE?
+## Exit codes
+# 1 - tag mode, but no tags
+# 2 - curl error
 get_page_ids() {
-	local PID=$1
-	[ "$PID" = "" ] && local PID=0
+	[ "$6" = 1 ] && echo "[I]: Function get_page_ids()" 1>&2
 
-	VOPT="-s"
-	[ $VERBOSE = 1 ] && VOPT=""
+	local PID=0 ; [ "$1" != "" ] && local PID="$1"
+	local FRINGE="nope" ; [ "$2" = 1 ] && local FRINGE="yup"
+	local RETRY_TIMES=5 ; [ "$3" != "" ] && local RETRY_TIMES=$3
+	local VOPT="-s" ; [ "$6" = 1 ] && local VOPT=""
 
-	echo $(curl $VOPT -L "https://gelbooru.com/index.php"\
-		-G -d "page=post" -d "s=list" \
-		--cookie "fringeBenefits=$FRINGE" \
-		-d "pid=$PID" | \
-			grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | \
-			grep -Po "id=[0-9]+" | grep -o "[0-9]*")
+	echo "FRINGE: $FRINGE" >&2
+
+	if [ "$4" = 1 ]; then
+		# Tag mode
+		[ "$5" = "" ] && return 1 # Exit if no tags specified for tag mode
+		[ "$6" = 1 ] && echo "[I]: Running in tag mode" 1>&2
+
+		[ "$6" = 1 ] && echo "[I]: Getting ids form page with tags" 1>&2
+		# Retry if curl fails multiple times
+		local SUCCESS=0
+		while [ "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ]; do
+			local IDS="$(curl $VOPT -L "https://gelbooru.com/index.php" \
+				-G -d "page=post" -d "s=list" \
+				--cookie "fringeBenefits=$FRINGE" \
+				--data-urlencode "tags=$5" -d "pid=$PID" | \
+					grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" \
+					| grep -Po "id=[0-9]+" | grep -o "[0-9]*")"
+
+			[ "$IDS" != "" ] && local SUCCESS=1
+			local RETRY_TIMES=$((RETRY_TIMES - 1))
+			[ "$6" = 1 -a "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ] && echo "[W]: curl failed to get ids from page, retrying..." 1>&2
+		done
+
+		if [ "$SUCCESS" = 0 ]; then
+			echo "[E]: curl failed to get ids from page: $PID, with tags: $5" 1>&2
+			return 2
+		fi
+	else
+		# General page mode
+		[ "$6" = 1 ] && echo "[I]: Running in general page mode" 1>&2
+		[ "$6" = 1 ] && echo "[I]: Getting ids form page" 1>&2
+
+		# Retry if curl fails multiple times
+		local SUCCESS=0
+		while [ "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ]; do
+
+			local IDS="$(curl $VOPT -L "https://gelbooru.com/index.php"\
+				-G -d "page=post" -d "s=list" \
+				--cookie "fringeBenefits=$FRINGE" -d "pid=$PID" | \
+					grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" | \
+					grep -Po "id=[0-9]+" | grep -o "[0-9]*")"
+
+			[ "$IDS" != "" ] && local SUCCESS=1
+			local RETRY_TIMES=$((RETRY_TIMES - 1))
+			[ "$6" = 1 -a "$SUCCESS" = 0 -a "$RETRY_TIMES" -gt 0 ] && echo "[W]: curl failed to get ids from page, retrying..." 1>&2
+		done
+
+		if [ "$SUCCESS" = 0 ]; then
+			echo "[E]: curl failed to get ids from page: $PID" 1>&2
+			return 2
+		fi
+	fi
+
+	[ "$6" = 1 ] && echo "[I]: Successfully got ids" 1>&2
+	echo "$IDS"
 }
 
-# Get ids of posts with specified tags on a specified page
-# $1 - PID
-# $2 - TAGS
-get_tag_page_ids() {
-	local PID=$1
-	[ "$PID" = "" ] && local PID=0
+# Exit if any dependenices are missing
+if ! check_dependencies "curl"; then
+	echo "[I]: Exiting with an exit code of 1 due to missing dependencies"
+	exit 1
+fi
 
-	local TAGS=$2
-	[ "$TAGS" = "" ] && return
+# Display usage and exit if no arguments present
+[ "$1" = "" ] && usage && exit 0
 
-	VOPT="-s"
-	[ $VERBOSE = 1 ] && VOPT=""
-
-	echo $(curl $VOPT -L "https://gelbooru.com/index.php" \
-		-G -d "page=post" -d "s=list" \
-		--cookie "fringeBenefits=$FRINGE" \
-		--data-urlencode "tags=$TAGS" \
-		-d "pid=$PID" | \
-			grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" \
-			| grep -Po "id=[0-9]+" | grep -o "[0-9]*")
-}
-
-# Display usage if no arguments present
-[ "$2" = "" ] && usage
-
-FRINGE="nope"
+FRINGE=0
 IDS=""
 PID=""
 TAGS=""
 VERBOSE=0
 OUTDIR="."
-RENID=0
 while [ "$1" != "" ]; do
 	case $1 in
-		"-f") FRINGE="yup" ;;
+		"-f") FRINGE=1 ;;
 		"-i") IDS="$2"; shift ;;
 		"-p") PID="$2"; shift ;;
 		"-t") TAGS="$2"; shift ;;
 		"-o") OUTDIR="$2"; shift ;;
 		"-v") VERBOSE=1 ;;
-		"-r") RENID=1 ;;
-		"-h") usage ;;
+		"-h") usage ; exit 0 ;;
+		"-V") echo $VERSION ; exit 0 ;;
 	esac
 	shift
 done
 
-COMPLETED_SUCCESSFULLY=1
-
-INITDIR="$(pwd)"
 mkdir -p "$OUTDIR"
-cd "$OUTDIR"
 
 if [ "$IDS" != "" ]; then
 	# ID mode
 	echo "[I]: Running in id mode"
-	download_ids "$IDS"
+	download_ids "$IDS" $FRINGE $RETRY_TIMES $OUTDIR $VERBOSE
 else
 	if [ "$PID" != "" ]; then
 		if [ "$TAGS" = "" ]; then
-			# Page mode [not tested, but should work]
+			# Page mode
 			echo "[I]: Running in page mode"
-			download_ids "$(get_page_ids $(($PID * 42)))"
+			download_ids "$(get_page_ids $PID $FRINGE $RETRY_TIMES 0 "" $VERBOSE)" $FRINGE $RETRY_TIMES $OUTDIR $VERBOSE
 		else
 			# Tags + pid
 			echo "[I]: Running in tag + page mode"
-			download_ids "$(get_tag_page_ids $(($PID * 42)) "$TAGS")"
+			download_ids "$(get_page_ids $PID $FRINGE $RETRY_TIMES 1 "$TAGS" $VERBOSE)" $FRINGE $RETRY_TIMES $OUTDIR $VERBOSE
 		fi
 	else
 		if [ "$TAGS" != "" ]; then
 			# Tag mode
 			echo "[I]: Running in tag mode"
 			PID=0
-			IDS=$(get_tag_page_ids $PID "$TAGS")
+			IDS=$(get_page_ids $PID $FRINGE $RETRY_TIMES 1 "$TAGS" $VERBOSE)
 			while [ "$IDS" != "" ]; do
 				printf "\n[I] Page ID: $PID\n\n"
-				download_ids "$IDS"
+				download_ids "$IDS" $FRINGE $RETRY_TIMES $OUTDIR $VERBOSE
 				PID=$(($PID + 42))
-				IDS=$(get_tag_page_ids $PID "$TAGS")
+				IDS=$(get_page_ids $PID $FRINGE $RETRY_TIMES 1 "$TAGS" $VERBOSE)
 			done
 		fi
 	fi
-fi
-
-cd "$INITDIR"
-
-if [ $COMPLETED_SUCCESSFULLY = 0 ]; then
-	echo "[I]: Exiting with a non-zero status due to prevoius errors" 1>&2
-	exit 1
 fi
 
