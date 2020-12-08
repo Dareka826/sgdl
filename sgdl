@@ -60,7 +60,7 @@ get_image() {
 	[ "$4" = 1 -a "$1" = "" ] && echo "[E]: No ID given" 1>&2
 	[ "$1" = "" ] && return 1 # Exit if no ID is supplied
 
-	local FRINGE="nope" ; [ "$2" = 1 ] && local FRINGE="yup"
+	local FRINGE="" ; [ "$2" = 1 ] && local FRINGE="yup"
 	local RETRY_TIMES=5 ; [ "$3" != "" ] && local RETRY_TIMES=$3
 	local VOPT="-s" ; [ "$4" = 1 ] && local VOPT=""
 
@@ -168,7 +168,7 @@ get_page_ids() {
 	[ "$6" = 1 ] && echo "[I]: Function get_page_ids()" 1>&2
 
 	local PID=0 ; [ "$1" != "" ] && local PID="$1"
-	local FRINGE="nope" ; [ "$2" = 1 ] && local FRINGE="yup"
+	local FRINGE="" ; [ "$2" = 1 ] && local FRINGE="yup"
 	local RETRY_TIMES=5 ; [ "$3" != "" ] && local RETRY_TIMES=$3
 	local VOPT="-s" ; [ "$6" = 1 ] && local VOPT=""
 
