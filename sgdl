@@ -187,8 +187,7 @@ get_page_ids() {
 				-G -d "page=post" -d "s=list" \
 				--cookie "fringeBenefits=$FRINGE" \
 				--data-urlencode "tags=$5" -d "pid=$PID" | \
-					grep -Po "\"//gelbooru.*?id=[0-9]+.*?\"" \
-					| grep -Po "id=[0-9]+" | grep -o "[0-9]*")"
+					grep -Po "id=\"p[0-9]+\"" | grep -Po "[0-9]+")"
 
 			[ "$IDS" != "" ] && local SUCCESS=1
 			local RETRY_TIMES=$((RETRY_TIMES - 1))
