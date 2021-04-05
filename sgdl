@@ -64,8 +64,6 @@ get_image() {
 	local RETRY_TIMES=5 ; [ "$3" != "" ] && local RETRY_TIMES=$3
 	local VOPT="-s" ; [ "$4" = 1 ] && local VOPT=""
 
-	echo "FRINGE: $FRINGE" >&2
-
 	[ "$4" = 1 ] && echo "[I]: Getting image from id" 1>&2
 
 	# Try a number of times before giving up
@@ -171,8 +169,6 @@ get_page_ids() {
 	local FRINGE="" ; [ "$2" = 1 ] && local FRINGE="yup"
 	local RETRY_TIMES=5 ; [ "$3" != "" ] && local RETRY_TIMES=$3
 	local VOPT="-s" ; [ "$6" = 1 ] && local VOPT=""
-
-	echo "FRINGE: $FRINGE" >&2
 
 	if [ "$4" = 1 ]; then
 		# Tag mode
