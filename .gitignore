@@ -1,5 +1,9 @@
 *.txt
 .redo
+version.h
+sgdl
+*.o
+*.d
 *.jpg
 *.jpeg
 *.png
