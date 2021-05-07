@@ -1,16 +1,14 @@
-#include "get_image.h"
-#include "sgdl_common_defs.h"
-
 #include <curl/curl.h>
 #include <assert.h>
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "curl_result_string.h"
+#include "curl_response_string.h"
 
-void get_image(int id, char* result_url) {
+void get_image(int id, char *result_url) {
 	assert(id >= 0);
+	assert(result_url != NULL);
 
 	// Init cURL
 	CURL *curl = curl_easy_init();
@@ -24,15 +22,15 @@ void get_image(int id, char* result_url) {
 	sprintf(url, "https://gelbooru.com/index.php?page=post&s=view&id=%u", id);
 
 	// Set options
-	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
-	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1  );
+	curl_easy_setopt(curl, CURLOPT_URL,        url);
 
 	// Create the response data struct
-	struct curl_result_string str;
-	init_curl_result_string(&str);
+	struct curl_response_string str;
+	init_curl_response_string(&str);
 
 	// Get the response
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writefunction_result_string);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writefunction_response_string);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
 
 	int success = 0;
@@ -76,12 +74,12 @@ void get_image(int id, char* result_url) {
 	buf[len++] = '\0'; // End the string
 
 	// Return the url
-	printf("URL: %s\n", buf);
+	//printf("URL: %s\n", buf);
 	strcpy(result_url, buf);
 
 	// Cleanup
 	regfree(&regex); // Free the regex
-	free_curl_result_string(&str);
+	free_curl_response_string(&str);
 	curl_easy_cleanup(curl);
 }
 

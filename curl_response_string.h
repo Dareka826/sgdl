@@ -3,25 +3,25 @@
  * as a result of a libcurl request
  * */
 
-#ifndef __CURL_RESULT_STRING_H
-#define __CURL_RESULT_STRING_H
+#ifndef __CURL_RESPONSE_STRING_H
+#define __CURL_RESPONSE_STRING_H
 
 #include <stdlib.h>
 
 // The struct used for data storage
-struct curl_result_string {
+struct curl_response_string {
 	char *ptr;
 	size_t len;
 };
 
 // Initialize the struct
-void init_curl_result_string(struct curl_result_string *s);
+void init_curl_response_string(struct curl_response_string *s);
 
 // Free the memory used by the struct
-void free_curl_result_string(struct curl_result_string *s);
+void free_curl_response_string(struct curl_response_string *s);
 
 // The callback function for libcurl that writes to the struct
-size_t curl_writefunction_result_string(
-		void *ptr, size_t size, size_t nmemb, struct curl_result_string *s);
+size_t curl_writefunction_response_string(
+		void *ptr, size_t size, size_t nmemb, struct curl_response_string *s);
 
 #endif

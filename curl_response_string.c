@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
-#include "curl_result_string.h"
+#include "curl_response_string.h"
 
-void init_curl_result_string(struct curl_result_string *s) {
+void init_curl_response_string(struct curl_response_string *s) {
 	s->len = 0;
 	s->ptr = (char*) malloc(1);
 
@@ -14,13 +14,13 @@ void init_curl_result_string(struct curl_result_string *s) {
 	s->ptr[0] = '\0';
 }
 
-void free_curl_result_string(struct curl_result_string *s) {
+void free_curl_response_string(struct curl_response_string *s) {
 	free(s->ptr);
 }
 
-size_t curl_writefunction_result_string(
+size_t curl_writefunction_response_string(
 		void *ptr, size_t size,
-		size_t nmemb, struct curl_result_string *s) {
+		size_t nmemb, struct curl_response_string *s) {
 
 	size_t new_len = s->len + size*nmemb; // Legth after new data is appended
 

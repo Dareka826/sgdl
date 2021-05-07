@@ -1,0 +1,8 @@
+# vim: ft=sh
+
+VERSION="3.0.0"
+RETRY_COUNT=5
+
+CFLAGS="-g -Wall -Os -DVERSION=\"$VERSION\" -DRETRY_COUNT=$RETRY_COUNT"
+LDFLAGS="-lcurl"
+

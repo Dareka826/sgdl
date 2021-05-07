@@ -10,3 +10,4 @@ sgdl
 *.webp
 *.webm
 *.mp4
+!compile_flags.txt
