@@ -1,50 +1,22 @@
 #include "get_image.h"
-#include "sgdl_common_defs.h"
 
-#include <curl/curl.h>
 #include <assert.h>
-#include <regex.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <regex.h>
 #include <string.h>
-#include "curl_result_string.h"
+#include "fetch_url.h"
 
-void get_image(int id, char* result_url) {
+int sgdl_get_image(unsigned int id, char *result_url, size_t result_url_size) {
 	assert(id >= 0);
 
-	// Init cURL
-	CURL *curl = curl_easy_init();
-	if(!curl) {
-		fprintf(stderr, "[E]: Failed to init cURL\n");
-		exit(EXIT_FAILURE);
-	}
-
-	// Generate the request url
 	char url[100];
-	sprintf(url, "https://gelbooru.com/index.php?page=post&s=view&id=%u", id);
+	snprintf(url, 100, "https://gelbooru.com/index.php?page=post&s=view&id=%u", id);
 
-	// Set options
-	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
-	curl_easy_setopt(curl, CURLOPT_URL, url);
+	struct fetch_url_result r;
+	init_fetch_url_result(&r);
 
-	// Create the response data struct
-	struct curl_result_string str;
-	init_curl_result_string(&str);
-
-	// Get the response
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writefunction_result_string);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
-
-	int success = 0;
-	int try_count = RETRY_COUNT;
-	while(success == 0 && try_count > 0) {
-		// Execute the request
-		CURLcode result = curl_easy_perform(curl);
-
-		if(result == CURLE_OK)
-			success = 1;
-		else try_count--;
-	}
+	fetch_url(url, &r);
 
 	// Find the original image url in html data
 	regex_t regex;
@@ -52,36 +24,37 @@ void get_image(int id, char* result_url) {
 	int ret;
 
 	// Compile the regex
-	ret = regcomp(&regex, "https://[^<]*Original image</a>", REG_EXTENDED);
-	if(ret != 0) {
-		fprintf(stderr, "[E]: regcomp() failed\n");
-		exit(EXIT_FAILURE);
-	}
+	ret = regcomp(&regex, "https://[^>]*>Original image</a>", REG_EXTENDED);
+	if(ret != 0) return 1;
 
 	// Execute the regex
-	ret = regexec(&regex, str.ptr, 1, matches, 0);
-	if(ret != 0) {
-		// No matches --> Return empty url
-		result_url[0] = '\0';
-		return;
-	}
+	ret = regexec(&regex, r.ptr, 1, matches, 0);
+	if(ret != 0)
+		// No matches
+		return 1;
 
-	char buf[256]; // Buffer for url
-	int len = 0;
+	const size_t BUFFER_MAX_LENGTH = 200;
+	char buf[BUFFER_MAX_LENGTH]; // Buffer for url
 
-	// Read characters until " or end of match
-	for(int i = matches[0].rm_so; str.ptr[i] != '"' && i < matches[0].rm_eo; i++)
-		buf[len++] = str.ptr[i];
+	// Read characters until a " character or end of match
+	// to determine length of image url
+	size_t pos = matches[0].rm_so;
+	while(r.ptr[pos] != '"' && pos <= matches[0].rm_eo)
+		pos++;
 
+	size_t len = pos - matches[0].rm_so;
+	if(len >= BUFFER_MAX_LENGTH) // Restrict the max length
+		len = BUFFER_MAX_LENGTH - 1;
+
+	strncpy(buf, r.ptr + matches[0].rm_so, len);
 	buf[len++] = '\0'; // End the string
 
-	// Return the url
-	printf("URL: %s\n", buf);
-	strcpy(result_url, buf);
-
-	// Cleanup
+	destroy_fetch_url_result(&r);
 	regfree(&regex); // Free the regex
-	free_curl_result_string(&str);
-	curl_easy_cleanup(curl);
+
+	// Return the url
+	strncpy(result_url, buf, (len < result_url_size ? len : result_url_size));
+
+	return 0;
 }
 

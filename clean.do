@@ -1,1 +1,1 @@
-rm *.d *.o sgdl || :
+rm *.o *.d sgdl

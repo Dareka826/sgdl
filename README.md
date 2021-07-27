@@ -4,6 +4,7 @@ A program that I made to download all pictures from a specified tag or id, becau
 
 # Requirements
 - libcurl
+- regex
 
 # Building
 

@@ -1,9 +1,13 @@
-*.txt
 .redo
-version.h
-sgdl
+
+*.txt
+*.sh
+
 *.o
 *.d
+
+sgdl
+
 *.jpg
 *.jpeg
 *.png

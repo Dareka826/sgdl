@@ -1,7 +1,4 @@
-DEPS="sgdl.o curl_result_string.o get_image.o"
-redo-ifchange $DEPS
+OBJ="fetch_url.o get_image.o main.o"
 
-CFLAGS="-Wall -g"
-LDFLAGS="-lcurl"
-
-gcc $LDFLAGS $CFLAGS $DEPS -o $3
+redo-ifchange $OBJ
+gcc -lcurl $OBJ -o $3
