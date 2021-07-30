@@ -17,4 +17,5 @@ Run `redo` to build
 * [ ] get_by_tags
 * [ ] get_by_page_id
 * [ ] command line options
+* [ ] add verbose mode
 
