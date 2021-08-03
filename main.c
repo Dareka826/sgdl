@@ -44,6 +44,15 @@ int main(int argc, char **argv) {
 		return EXIT_SUCCESS;
 	}
 
+	int DEBUG = 0;
+
+	{
+		char *SGDL_DEBUG = getenv("SGDL_DEBUG");
+
+		if(SGDL_DEBUG != NULL && strcmp(SGDL_DEBUG, "1") == 0)
+			DEBUG = 1;
+	}
+
 	struct command_def commands[] = {
 		{  "id", &process_ids  },
 		{ "tag", &process_tags }
@@ -85,11 +94,13 @@ int main(int argc, char **argv) {
 		struct option opt = options[i];
 
 		if(opt.has_arg && opt.arg != NULL) {
-			printf("Option -%c: %s\n", opt.letter, opt.arg);
+			if(DEBUG)
+				printf("Option -%c: %s\n", opt.letter, opt.arg);
 			first_non_opt += 2;
 
 		} else if(!opt.has_arg && opt.is_true) {
-			printf("Option -%c: %d\n", opt.letter, opt.is_true);
+			if(DEBUG)
+				printf("Option -%c: %d\n", opt.letter, opt.is_true);
 			first_non_opt++;
 		}
 	}
