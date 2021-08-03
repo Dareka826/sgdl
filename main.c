@@ -14,6 +14,11 @@ struct option {
 	};
 };
 
+struct option_conflict {
+	char opt1;
+	char opt2;
+};
+
 typedef int (*command_func)(int, struct option*, int, char**);
 
 struct command_def {
@@ -25,6 +30,7 @@ void usage(char *progname);
 command_func check_command(struct command_def *cmds, int cmd_count, char *cmd);
 int parse_opts(int opt_len, struct option *options, int argc, char **args);
 int set_option(struct option *opt, int *i, int argc, char **args);
+int is_option_set(struct option opt);
 
 int  process_ids(int optc, struct option *options, int argc, char **args);
 int process_tags(int optc, struct option *options, int argc, char **args);
@@ -64,6 +70,12 @@ int main(int argc, char **argv) {
 		{ 'e', 1, { NULL } }  // Page range end for tag mode
 	};
 
+	struct option_conflict opt_conflicts[] = {
+		{ 'd', 'u' },
+		{ 's', 'p' },
+		{ 'e', 'p' }
+	};
+
 	// Parse options
 	if(parse_opts(ARR_LEN(options), options, argc-2, argv+2) != EXIT_SUCCESS)
 		return EXIT_FAILURE;
@@ -82,7 +94,24 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	printf("\nfirst_non_opt: %d\n\n", first_non_opt);
+	for(int i = 0; i < ARR_LEN(opt_conflicts); i++) {
+		struct option_conflict oc = opt_conflicts[i];
+		int how_many_set = 0;
+
+		for(int j = 0; j < ARR_LEN(options); j++) {
+			struct option opt = options[j];
+
+			if(is_option_set(opt) &&
+					(opt.letter == oc.opt1 || opt.letter == oc.opt2))
+				how_many_set++;
+		}
+
+		if(how_many_set > 1) {
+			fprintf(stderr, "[E] Conflicting options: -%c & -%c\n",
+					oc.opt1, oc.opt2);
+			return EXIT_FAILURE;
+		}
+	}
 
 	if(first_non_opt >= argc) {
 		fprintf(stderr, "[E] No command arguments supplied\n");
@@ -173,6 +202,16 @@ int set_option(struct option *opt, int *i, int argc, char **args) {
 	} else opt->is_true = 1;
 
 	return EXIT_SUCCESS;
+}
+
+int is_option_set(struct option opt) {
+	int is_set = 0;
+
+	if((opt.has_arg && opt.arg != NULL) ||
+			(!opt.has_arg && opt.is_true))
+		is_set = 1;
+
+	return is_set;
 }
 
 int process_ids(int optc, struct option *options, int argc, char **args) {
