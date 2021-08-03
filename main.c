@@ -55,13 +55,13 @@ int main(int argc, char **argv) {
 
 	// Parse options
 	struct option options[] = {
-		{ 'd', 0, { 0 }    },
-		{ 'f', 0, { 0 }    },
-		{ 'h', 0, { 0 }    },
-		{ 'u', 0, { 0 }    },
-		{ 'e', 1, { NULL } },
-		{ 'p', 1, { NULL } },
-		{ 's', 1, { NULL } }
+		{ 'd', 0, { 0 }    }, // Dl instead of printing urls
+		{ 'u', 0, { 0 }    }, // Don't print ida with urls
+		{ 'h', 0, { 0 }    }, // Show help
+		{ 'f', 0, { 0 }    }, // Enable fringe content
+		{ 'p', 1, { NULL } }, // Page id for tag mode
+		{ 's', 1, { NULL } }, // Page range start for tag mode
+		{ 'e', 1, { NULL } }  // Page range end for tag mode
 	};
 
 	// Parse options
