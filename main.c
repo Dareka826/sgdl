@@ -177,12 +177,28 @@ int set_option(struct option *opt, int *i, int argc, char **args) {
 
 int process_ids(int optc, struct option *options, int argc, char **args) {
 
+	int dl_files = 0;
+	int print_id_url = 1;
+
+	for(int i = 0; i < optc; i++) {
+		struct option opt = options[i];
+
+		if(opt.letter == 'd')
+			dl_files = opt.is_true;
+		else if(opt.letter == 'u')
+			print_id_url = !opt.is_true;
+	}
+
 	char url[200];
 	for(int i = 0; i < argc; i++) {
 		int id = atoi(args[i]);
 		if(sgdl_get_image(id, url, 200) != 0)
 			strncpy(url, "ERROR", 6);
-		printf("[%d]: %s\n", id, url);
+
+		if(print_id_url)
+			printf("[%d]: %s\n", id, url);
+		else
+			printf("%s\n", url);
 	}
 
 	return EXIT_SUCCESS;
