@@ -5,7 +5,16 @@
 
 #define ARR_LEN(arr) ( sizeof(arr) / sizeof(arr[0]) )
 
-typedef int (*command_func)(int, char**);
+struct option {
+	char letter;
+	int has_arg; // Either has an arg of is t/f
+	union {
+		char *arg;
+		int is_true;
+	};
+};
+
+typedef int (*command_func)(int, struct option*, int, char**);
 
 struct command_def {
 	char *name;
@@ -14,9 +23,11 @@ struct command_def {
 
 void usage(char *progname);
 command_func check_command(struct command_def *cmds, int cmd_count, char *cmd);
+int parse_opts(int opt_len, struct option *options, int argc, char **args);
+int set_option(struct option *opt, int *i, int argc, char **args);
 
-int  process_ids(int argc, char **args);
-int process_tags(int argc, char **args);
+int  process_ids(int optc, struct option *options, int argc, char **args);
+int process_tags(int optc, struct option *options, int argc, char **args);
 
 
 int main(int argc, char **argv) {
@@ -42,7 +53,44 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	return cmd_f(argc, argv);
+	// Parse options
+	struct option options[] = {
+		{ 'd', 0, { 0 }    },
+		{ 'f', 0, { 0 }    },
+		{ 'h', 0, { 0 }    },
+		{ 'u', 0, { 0 }    },
+		{ 'e', 1, { NULL } },
+		{ 'p', 1, { NULL } },
+		{ 's', 1, { NULL } }
+	};
+
+	// Parse options
+	if(parse_opts(ARR_LEN(options), options, argc-2, argv+2) != EXIT_SUCCESS)
+		return EXIT_FAILURE;
+
+	int first_non_opt = 2;
+	for(int i = 0; i < ARR_LEN(options); i++) {
+		struct option opt = options[i];
+
+		if(opt.has_arg && opt.arg != NULL) {
+			printf("Option -%c: %s\n", opt.letter, opt.arg);
+			first_non_opt += 2;
+
+		} else if(!opt.has_arg && opt.is_true) {
+			printf("Option -%c: %d\n", opt.letter, opt.is_true);
+			first_non_opt++;
+		}
+	}
+
+	printf("\nfirst_non_opt: %d\n\n", first_non_opt);
+
+	if(first_non_opt >= argc) {
+		fprintf(stderr, "[E] No command arguments supplied\n");
+		return EXIT_FAILURE;
+	}
+
+	return cmd_f(ARR_LEN(options), options,
+			argc-first_non_opt, argv+first_non_opt);
 }
 
 
@@ -81,10 +129,56 @@ command_func check_command(struct command_def *cmds, int cmds_len, char *cmd) {
 	return ret;
 }
 
-int process_ids(int argc, char **args) {
+int parse_opts(int opt_len, struct option *options, int argc, char **args) {
+
+	for(int i = 0; i < argc; i++) {
+
+		if(strlen(args[i]) != 2 || args[i][0] != '-')
+			break; // stop on first non-option
+
+		else {
+			int parsed = 0;
+
+			for(int j = 0; j < opt_len; j++)
+				if(options[j].letter == args[i][1]) {
+
+					if(set_option(&options[j], &i, argc, args) != EXIT_SUCCESS)
+						return EXIT_FAILURE;
+
+					parsed = 1;
+					break;
+				}
+
+			if(!parsed) {
+				fprintf(stderr, "[E] Unknown option: -%c\n", args[i][1]);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	return EXIT_SUCCESS;
+}
+
+int set_option(struct option *opt, int *i, int argc, char **args) {
+
+	if(opt->has_arg) {
+		if((*i)+1 >= argc) {
+			fprintf(stderr,
+					"[E]: No argument supplied to option: %c\n", opt->letter);
+			return EXIT_FAILURE;
+		}
+
+		(*i)++;
+		opt->arg = args[*i];
+	} else opt->is_true = 1;
+
+	return EXIT_SUCCESS;
+}
+
+int process_ids(int optc, struct option *options, int argc, char **args) {
 
 	char url[200];
-	for(int i = 2; i < argc; i++) {
+	for(int i = 0; i < argc; i++) {
 		int id = atoi(args[i]);
 		if(sgdl_get_image(id, url, 200) != 0)
 			strncpy(url, "ERROR", 6);
@@ -94,7 +188,7 @@ int process_ids(int argc, char **args) {
 	return EXIT_SUCCESS;
 };
 
-int process_tags(int argc, char **args) {
+int process_tags(int optc, struct option *options, int argc, char **args) {
 	printf("Tag mode not implemented\n");
 
 	return EXIT_SUCCESS;
