@@ -1,6 +1,6 @@
 # Simple Gelbooru Downloader
 
-A program that I made to download all pictures from a specified tag or id, because I couldn't find a way to get multiple pages with the official API
+A program that I made to download all pictures from a specified tag or id/ids, because I couldn't find a way to get multiple pages by tag with the official API
 
 # Requirements
 - libcurl
@@ -14,7 +14,7 @@ Run `redo` to build
 
 # TODO
 * [x] get_image
+* [x] command line options
 * [ ] get_by_tags
-* [ ] command line options
 * [ ] add verbose mode
 
