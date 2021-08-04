@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 
 	// Specified command not found
 	if(cmd_f == NULL) {
-		fprintf(stderr, "[E]: Command not found: %s\n", argv[1]);
+		fprintf(stderr, "[E] Command not found: %s\n", argv[1]);
 		usage(argv[0]);
 		return EXIT_FAILURE;
 	}
@@ -204,7 +204,7 @@ int set_option(struct option *opt, int *i, int argc, char **args) {
 	if(opt->has_arg) {
 		if((*i)+1 >= argc) {
 			fprintf(stderr,
-					"[E]: No argument supplied to option: %c\n", opt->letter);
+					"[E] No argument supplied to option: %c\n", opt->letter);
 			return EXIT_FAILURE;
 		}
 
