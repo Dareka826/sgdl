@@ -272,7 +272,7 @@ enum SGDL_CODE process_ids(int optc, struct option *options, int argc, char **ar
 			continue;
 		}
 
-		if(sgdl_get_image(id, url, 200) != 0)
+		if(sgdl_get_image(id, url, sizeof(url)) != SGDL_E_OK)
 			strncpy(url, "ERROR", 6);
 
 		if(print_id_url)
