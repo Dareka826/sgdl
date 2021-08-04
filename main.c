@@ -27,10 +27,16 @@ struct command_def {
 };
 
 void usage(char *progname);
+
 command_func check_command(struct command_def *cmds, int cmd_count, char *cmd);
+
 int parse_opts(int opt_len, struct option *options, int argc, char **args);
 int set_option(struct option *opt, int *i, int argc, char **args);
+
 int is_option_set(struct option opt);
+
+int is_digits(char *str);
+
 
 int  process_ids(int optc, struct option *options, int argc, char **args);
 int process_tags(int optc, struct option *options, int argc, char **args);
@@ -225,6 +231,13 @@ int is_option_set(struct option opt) {
 	return is_set;
 }
 
+// Check if the string consists of only [0-9]
+// It's in a separate function to avoid having the sting with numbers
+// in multiple places in memory
+int is_digits(char *str) {
+	return (strspn(str, "0123456789") == strlen(str));
+}
+
 // Downloads images by their id
 // Accepts: -d -u
 int process_ids(int optc, struct option *options, int argc, char **args) {
@@ -241,9 +254,21 @@ int process_ids(int optc, struct option *options, int argc, char **args) {
 			print_id_url = !opt.is_true;
 	}
 
+	int ret = EXIT_SUCCESS;
+
 	char url[200];
 	for(int i = 0; i < argc; i++) {
-		int id = atoi(args[i]);
+		// Check if arg is a number, if not print error, but don't quit
+		int id;
+
+		if(is_digits(args[i]))
+			id = atoi(args[i]);
+		else {
+			fprintf(stderr, "[E] Not a valid id: %s\n", args[i]);
+			ret = EXIT_FAILURE;
+			continue;
+		}
+
 		if(sgdl_get_image(id, url, 200) != 0)
 			strncpy(url, "ERROR", 6);
 
@@ -253,7 +278,7 @@ int process_ids(int optc, struct option *options, int argc, char **args) {
 			printf("%s\n", url);
 	}
 
-	return EXIT_SUCCESS;
+	return ret;
 };
 
 int process_tags(int optc, struct option *options, int argc, char **args) {
