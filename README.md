@@ -18,4 +18,5 @@ Run `redo` to build
 * [x] get_by_tags
 * [ ] add verbose mode
 * [ ] threads
+* [ ] circumvent page limit by limiting id range
 
