@@ -225,6 +225,8 @@ int is_option_set(struct option opt) {
 	return is_set;
 }
 
+// Downloads images by their id
+// Accepts: -d -u
 int process_ids(int optc, struct option *options, int argc, char **args) {
 
 	int dl_files = 0;
