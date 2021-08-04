@@ -28,15 +28,14 @@ enum SGDL_CODE sgdl_get_image(unsigned int id, char **result_url) {
 	// Find the original image url in html data
 	regex_t regex;
 	regmatch_t matches[2];
-	int ret;
 
 	// Compile the regex
-	ret = regcomp(&regex, "(https://[^\"]+)\"[^>]*>Original image</a>", REG_EXTENDED);
-	if(ret != 0) return SGDL_E_REGCOMP;
+	if(regcomp(&regex, "(https://[^\"]+)\"[^>]*>Original image</a>",
+			REG_EXTENDED) != 0)
+		return SGDL_E_REGCOMP;
 
 	// Execute the regex
-	ret = regexec(&regex, r.ptr, 2, matches, 0);
-	if(ret != 0) { // no matches
+	if(regexec(&regex, r.ptr, 2, matches, 0) != 0) { // no matches
 		regfree(&regex);
 		return SGDL_E_NO_MATCH;
 	}
