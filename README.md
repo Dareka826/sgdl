@@ -17,4 +17,5 @@ Run `redo` to build
 * [x] command line options
 * [ ] get_by_tags
 * [ ] add verbose mode
+* [ ] threads
 
