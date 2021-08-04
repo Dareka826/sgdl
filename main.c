@@ -39,8 +39,9 @@ int is_option_set(struct option opt);
 int is_digits(char *str);
 
 
-enum SGDL_CODE  process_ids(int optc, struct option *options, int argc, char **args);
-enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **args);
+enum SGDL_CODE     process_ids(int optc, struct option *options, int argc, char **args);
+enum SGDL_CODE    process_tags(int optc, struct option *options, int argc, char **args);
+enum SGDL_CODE process_id_list(int optc, struct option *options, int argc,  int  *args);
 
 
 int main(int argc, char **argv) {
@@ -246,6 +247,44 @@ int is_digits(char *str) {
 // Accepts: -d -u
 enum SGDL_CODE process_ids(int optc, struct option *options, int argc, char **args) {
 
+	// Check arguments for validity
+	int *result_ids = NULL;
+	int num_results = 0;
+
+	int ret = SGDL_E_OK;
+
+	for(int i = 0; i < argc; i++) {
+		// Check if arg is a number, if not print error, but don't quit
+		if(is_digits(args[i])) {
+
+			if(result_ids != NULL) {
+				result_ids = (int*) realloc(result_ids,
+										sizeof(int) * (num_results++));
+
+			} else {
+				num_results = 1;
+				result_ids = (int*) malloc(sizeof(int));
+			}
+
+			result_ids[num_results-1] = atoi(args[i]);
+		} else {
+
+			fprintf(stderr, "[E] Not a valid id: %s\n", args[i]);
+			ret = SGDL_E_BAD_ID;
+			continue;
+		}
+	}
+
+	if(process_id_list(optc, options, num_results, result_ids) != SGDL_E_OK)
+		ret = SGDL_E_ERR;
+
+	free(result_ids);
+
+	return ret;
+};
+
+enum SGDL_CODE process_id_list(int optc, struct option *options, int argc, int *args) {
+
 	int dl_files = 0;
 	int print_id_url = 1;
 
@@ -254,36 +293,37 @@ enum SGDL_CODE process_ids(int optc, struct option *options, int argc, char **ar
 
 		if(opt.letter == 'd')
 			dl_files = opt.is_true;
+
 		else if(opt.letter == 'u')
 			print_id_url = !opt.is_true;
 	}
 
 	int ret = SGDL_E_OK;
 
-	char url[200];
-	for(int i = 0; i < argc; i++) {
-		// Check if arg is a number, if not print error, but don't quit
-		int id;
+	char *url = NULL;
+	char error_str[] = "ERROR";
 
-		if(is_digits(args[i]))
-			id = atoi(args[i]);
-		else {
-			fprintf(stderr, "[E] Not a valid id: %s\n", args[i]);
-			ret = SGDL_E_BAD_ID;
-			continue;
+	for(int i = 0; i < argc; i++) {
+
+		if(sgdl_get_image(args[i], &url) != SGDL_E_OK) {
+			if(url != NULL) // Always is NULL if didn't return SGDL_E_OK
+				free(url);  // Just precaution if this behavior changes
+
+			ret = SGDL_E_ERR;
+			url = error_str;
 		}
 
-		if(sgdl_get_image(id, url, sizeof(url)) != SGDL_E_OK)
-			strncpy(url, "ERROR", 6);
-
 		if(print_id_url)
-			printf("[%d]: %s\n", id, url);
+			printf("[%d]: %s\n", args[i], url);
 		else
 			printf("%s\n", url);
+
+		if(url != NULL && url != error_str)
+			free(url);
 	}
 
 	return ret;
-};
+}
 
 enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **args) {
 
@@ -343,9 +383,8 @@ enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **a
 	if(sgdl_get_by_tag(query, enable_fringe, page_range[0], page_range[1],
 			&result_ids, &num_results) == SGDL_E_OK) {
 
-		for(int i = 0; i < num_results; i++) {
-			printf("%d\n", result_ids[i]);
-		}
+		if(process_id_list(optc, options, num_results, result_ids) != SGDL_E_OK)
+			ret = SGDL_E_ERR;
 
 	} else ret = SGDL_E_ERR;
 
