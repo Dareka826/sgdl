@@ -1,6 +1,7 @@
 .redo
 
 *.txt
+!compile_flags.txt
 
 *.sh
 !config.sh
