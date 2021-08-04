@@ -19,7 +19,7 @@ struct option_conflict {
 	char opt2;
 };
 
-typedef int (*command_func)(int, struct option*, int, char**);
+typedef enum SGDL_CODE (*command_func)(int, struct option*, int, char**);
 
 struct command_def {
 	char *name;
@@ -30,16 +30,16 @@ void usage(char *progname);
 
 command_func check_command(struct command_def *cmds, int cmd_count, char *cmd);
 
-int parse_opts(int opt_len, struct option *options, int argc, char **args);
-int set_option(struct option *opt, int *i, int argc, char **args);
+enum SGDL_CODE parse_opts(int opt_len, struct option *options, int argc, char **args);
+enum SGDL_CODE set_option(struct option *opt, int *i, int argc, char **args);
 
 int is_option_set(struct option opt);
 
 int is_digits(char *str);
 
 
-int  process_ids(int optc, struct option *options, int argc, char **args);
-int process_tags(int optc, struct option *options, int argc, char **args);
+enum SGDL_CODE  process_ids(int optc, struct option *options, int argc, char **args);
+enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **args);
 
 
 int main(int argc, char **argv) {
@@ -135,8 +135,11 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	return cmd_f(ARR_LEN(options), options,
-			argc-first_non_opt, argv+first_non_opt);
+	if(cmd_f(ARR_LEN(options), options,
+			argc-first_non_opt, argv+first_non_opt) != SGDL_E_OK)
+		return EXIT_FAILURE;
+
+	return EXIT_SUCCESS;
 }
 
 
@@ -175,7 +178,7 @@ command_func check_command(struct command_def *cmds, int cmds_len, char *cmd) {
 	return ret;
 }
 
-int parse_opts(int opt_len, struct option *options, int argc, char **args) {
+enum SGDL_CODE parse_opts(int opt_len, struct option *options, int argc, char **args) {
 
 	for(int i = 0; i < argc; i++) {
 
@@ -188,8 +191,8 @@ int parse_opts(int opt_len, struct option *options, int argc, char **args) {
 			for(int j = 0; j < opt_len; j++)
 				if(options[j].letter == args[i][1]) {
 
-					if(set_option(&options[j], &i, argc, args) != EXIT_SUCCESS)
-						return EXIT_FAILURE;
+					if(set_option(&options[j], &i, argc, args) != SGDL_E_OK)
+						return SGDL_E_OPTION_ERR;
 
 					parsed = 1;
 					break;
@@ -197,28 +200,28 @@ int parse_opts(int opt_len, struct option *options, int argc, char **args) {
 
 			if(!parsed) {
 				fprintf(stderr, "[E] Unknown option: -%c\n", args[i][1]);
-				return EXIT_FAILURE;
+				return SGDL_E_OPTION_ERR;
 			}
 		}
 	}
 
-	return EXIT_SUCCESS;
+	return SGDL_E_OK;
 }
 
-int set_option(struct option *opt, int *i, int argc, char **args) {
+enum SGDL_CODE set_option(struct option *opt, int *i, int argc, char **args) {
 
 	if(opt->has_arg) {
 		if((*i)+1 >= argc) {
 			fprintf(stderr,
 					"[E] No argument supplied to option: %c\n", opt->letter);
-			return EXIT_FAILURE;
+			return SGDL_E_OPTION_ERR;
 		}
 
 		(*i)++;
 		opt->arg = args[*i];
 	} else opt->is_true = 1;
 
-	return EXIT_SUCCESS;
+	return SGDL_E_OK;
 }
 
 int is_option_set(struct option opt) {
@@ -240,7 +243,7 @@ int is_digits(char *str) {
 
 // Downloads images by their id
 // Accepts: -d -u
-int process_ids(int optc, struct option *options, int argc, char **args) {
+enum SGDL_CODE process_ids(int optc, struct option *options, int argc, char **args) {
 
 	int dl_files = 0;
 	int print_id_url = 1;
@@ -254,7 +257,7 @@ int process_ids(int optc, struct option *options, int argc, char **args) {
 			print_id_url = !opt.is_true;
 	}
 
-	int ret = EXIT_SUCCESS;
+	int ret = SGDL_E_OK;
 
 	char url[200];
 	for(int i = 0; i < argc; i++) {
@@ -265,7 +268,7 @@ int process_ids(int optc, struct option *options, int argc, char **args) {
 			id = atoi(args[i]);
 		else {
 			fprintf(stderr, "[E] Not a valid id: %s\n", args[i]);
-			ret = EXIT_FAILURE;
+			ret = SGDL_E_BAD_ID;
 			continue;
 		}
 
@@ -281,9 +284,9 @@ int process_ids(int optc, struct option *options, int argc, char **args) {
 	return ret;
 };
 
-int process_tags(int optc, struct option *options, int argc, char **args) {
+enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **args) {
 	printf("Tag mode not implemented\n");
 
-	return EXIT_SUCCESS;
+	return SGDL_E_OK;
 };
 
