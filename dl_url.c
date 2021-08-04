@@ -30,43 +30,39 @@ enum DL_URL_CODE dl_url(char *url, char *fname) {
 		filename[fname_len-1] = '\0';
 	}
 
+	enum DL_URL_CODE ret = DL_URL_E_OK;
+
 	// Get image data
 	struct fetch_url_result r;
-	if(init_fetch_url_result(&r) != FETCH_URL_E_OK) {
-		regfree(&regex);
-		free(filename);
-		return DL_URL_E_FETCH_URL_ERR;
-	}
+	if(init_fetch_url_result(&r) == FETCH_URL_E_OK) {
+		if(fetch_url(url, &r, NULL) == FETCH_URL_E_OK) {
 
-	if(fetch_url(url, &r, NULL) != FETCH_URL_E_OK) {
-		destroy_fetch_url_result(&r);
-		regfree(&regex);
-		free(filename);
-		return DL_URL_E_FETCH_URL_ERR;
-	}
+			// Write to file
+			FILE *f = fopen(filename, "w");
+			if(f) {
+				int success = 1;
 
-	// Write to file
-	FILE *f = fopen(filename, "w");
-	if(!f) {
-		destroy_fetch_url_result(&r);
-		regfree(&regex);
-		free(filename);
-		return DL_URL_E_FILE_ERR;
-	}
+				for(int i = 0; i < r.len; i++)
+					if(fputc(r.ptr[i], f) == EOF) {
+						success = 0;
+						break;
+					}
 
-	for(int i = 0; i < r.len; i++)
-		if(fputc(r.ptr[i], f) == EOF) {
-			destroy_fetch_url_result(&r);
-			regfree(&regex);
-			free(filename);
-			fclose(f);
-			remove(filename);
-			return DL_URL_E_FILE_ERR;
-		}
+				fclose(f);
+
+				if(!success) {
+					remove(filename);
+					ret = DL_URL_E_FILE_ERR;
+				}
+			} else
+				ret = DL_URL_E_FILE_ERR;
+		} else
+			ret = DL_URL_E_FETCH_URL_ERR;
+	} else
+		ret = DL_URL_E_FETCH_URL_ERR;
 
 	destroy_fetch_url_result(&r);
 	regfree(&regex);
 	free(filename);
-	fclose(f);
-	return DL_URL_E_OK;
+	return ret;
 }
