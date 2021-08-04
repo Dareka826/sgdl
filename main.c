@@ -325,6 +325,8 @@ enum SGDL_CODE process_id_list(int optc, struct option *options, int argc, int *
 				printf("%s\n", url);
 
 		} else {
+			printf("[I] Downloading [%d]...\n", args[i]);
+
 			char id[10];
 			snprintf(id, sizeof(id), "%d", args[i]);
 
