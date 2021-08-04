@@ -4,7 +4,7 @@
 #include <string.h>
 
 enum FETCH_URL_CODE init_fetch_url_result(struct fetch_url_result *r);
-enum FETCH_URL_CODE destroy_fetch_url_result(struct fetch_url_result *r);
+void destroy_fetch_url_result(struct fetch_url_result *r);
 
 size_t fetch_url_curl_writefunc(void *ptr, size_t size, size_t nmemb,
 		struct fetch_url_result *r);
@@ -40,13 +40,11 @@ enum FETCH_URL_CODE init_fetch_url_result(struct fetch_url_result *r) {
 	return FETCH_URL_E_OK;
 }
 
-enum FETCH_URL_CODE destroy_fetch_url_result(struct fetch_url_result *r) {
-	if(r->ptr == NULL) return FETCH_URL_E_NULLPTR_ERR;
+void destroy_fetch_url_result(struct fetch_url_result *r) {
+	if(r->ptr == NULL) return;
 
 	free(r->ptr);
 	r->len = -1;
-
-	return FETCH_URL_E_OK;
 }
 
 size_t fetch_url_curl_writefunc(void *ptr, size_t size, size_t nmemb,

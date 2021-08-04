@@ -51,8 +51,7 @@ enum SGDL_CODE sgdl_get_image(unsigned int id, char *result_url, size_t result_u
 	strncpy(buf, r.ptr + matches[0].rm_so, len);
 	buf[len++] = '\0'; // End the string
 
-	if(destroy_fetch_url_result(&r) != FETCH_URL_E_OK)
-	 return SGDL_E_FETCH_URL_ERR;
+	destroy_fetch_url_result(&r);
 	regfree(&regex); // Free the regex
 
 	// Return the url

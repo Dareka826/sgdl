@@ -15,9 +15,9 @@ struct fetch_url_result {
 	size_t len;
 };
 
-enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result);
+enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result, char *cookie);
 
 enum FETCH_URL_CODE init_fetch_url_result(struct fetch_url_result *r);
-enum FETCH_URL_CODE destroy_fetch_url_result(struct fetch_url_result *r);
+void destroy_fetch_url_result(struct fetch_url_result *r);
 
 #endif
