@@ -15,7 +15,7 @@ Run `redo` to build
 # TODO
 * [x] get_image
 * [x] command line options
-* [ ] get_by_tags
+* [x] get_by_tags
 * [ ] add verbose mode
 * [ ] threads
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "get_image.h"
+#include "get_by_tag.h"
 
 #define ARR_LEN(arr) ( sizeof(arr) / sizeof(arr[0]) )
 
@@ -334,16 +335,23 @@ enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **a
 		}
 	}
 
-	char tmpbuf1[5], tmpbuf2[5];
-	snprintf(tmpbuf1, 5, "%d", page_range[0]);
-	snprintf(tmpbuf2, 5, "%d", page_range[1]);
+	int *result_ids = NULL;
+	int num_results = 0;
 
-	printf("Info:\nQuery: %s\nPage range: %s-%s\nFringe?: %c\n\n",
-			query,
-			(page_range[0] == -1 ? "" : tmpbuf1),
-			(page_range[1] == -1 ? "" : tmpbuf2),
-			(enable_fringe ? 'y' : 'n'));
+	enum SGDL_CODE ret = SGDL_E_OK;
 
-	return SGDL_E_OK;
+	if(sgdl_get_by_tag(query, enable_fringe, page_range[0], page_range[1],
+			&result_ids, &num_results) == SGDL_E_OK) {
+
+		for(int i = 0; i < num_results; i++) {
+			printf("%d\n", result_ids[i]);
+		}
+
+	} else ret = SGDL_E_ERR;
+
+	if(result_ids != NULL)
+		free(result_ids);
+	free(query);
+
+	return ret;
 };
-
