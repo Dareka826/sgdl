@@ -285,7 +285,64 @@ enum SGDL_CODE process_ids(int optc, struct option *options, int argc, char **ar
 };
 
 enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **args) {
-	printf("Tag mode not implemented\n");
+
+	// Construct the query
+	int query_len = 0;
+	for(int i = 0; i < argc; i++)
+		query_len += strlen(args[i]);
+	query_len += argc; // for joining with ' ' and '\0' at end
+
+	char *query = (char*) malloc(query_len);
+	if(query == NULL) return SGDL_E_MALLOC_ERR;
+
+	int index = 0;
+	for(int i = 0; i < argc; i++) {
+		strcpy(query+index, args[i]);
+		index += strlen(args[i]);
+
+		if(i < argc-1) {
+			query[index] = ' ';
+			index++;
+		}
+	}
+	query[query_len - 1] = '\0';
+
+	// Determine page range (-1 means unrestricted) and fringe content
+	int page_range[2] = { -1, -1 };
+	int enable_fringe = 0;
+
+	for(int i = 0; i < optc; i++) {
+		struct option opt = options[i];
+
+		if(opt.letter == 'f') {
+			enable_fringe = opt.is_true;
+
+		} else if(opt.letter == 'p' && opt.arg != NULL) {
+			if(is_digits(opt.arg))
+				page_range[0] = page_range[1] = atoi(opt.arg);
+			else return SGDL_E_OPTION_ERR;
+
+		} else if(opt.letter == 's' && opt.arg != NULL) {
+			if(is_digits(opt.arg))
+				page_range[0] = atoi(opt.arg);
+			else return SGDL_E_OPTION_ERR;
+
+		} else if(opt.letter == 'e' && opt.arg != NULL) {
+			if(is_digits(opt.arg))
+				page_range[1] = atoi(opt.arg);
+			else return SGDL_E_OPTION_ERR;
+		}
+	}
+
+	char tmpbuf1[5], tmpbuf2[5];
+	snprintf(tmpbuf1, 5, "%d", page_range[0]);
+	snprintf(tmpbuf2, 5, "%d", page_range[1]);
+
+	printf("Info:\nQuery: %s\nPage range: %s-%s\nFringe?: %c\n\n",
+			query,
+			(page_range[0] == -1 ? "" : tmpbuf1),
+			(page_range[1] == -1 ? "" : tmpbuf2),
+			(enable_fringe ? 'y' : 'n'));
 
 	return SGDL_E_OK;
 };
