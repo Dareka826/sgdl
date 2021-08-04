@@ -3,17 +3,17 @@
 #include <curl/curl.h>
 #include <string.h>
 
-enum fetch_url_code init_fetch_url_result(struct fetch_url_result *r);
-enum fetch_url_code destroy_fetch_url_result(struct fetch_url_result *r);
+enum FETCH_URL_CODE init_fetch_url_result(struct fetch_url_result *r);
+enum FETCH_URL_CODE destroy_fetch_url_result(struct fetch_url_result *r);
 
 size_t fetch_url_curl_writefunc(void *ptr, size_t size, size_t nmemb,
 		struct fetch_url_result *r);
 
-enum fetch_url_code fetch_url(char *url, struct fetch_url_result *result) {
-	enum fetch_url_code ret = OK;
+enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result) {
+	enum FETCH_URL_CODE ret = FETCH_URL_E_OK;
 
 	CURL *curl = curl_easy_init();
-	if(!curl) return CURL_ERR;
+	if(!curl) return FETCH_URL_E_CURL_ERR;
 
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -23,30 +23,30 @@ enum fetch_url_code fetch_url(char *url, struct fetch_url_result *result) {
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, result);
 
 	if(curl_easy_perform(curl) != CURLE_OK)
-		ret = CURL_ERR;
+		ret = FETCH_URL_E_CURL_ERR;
 
 	curl_easy_cleanup(curl);
 
 	return ret;
 }
 
-enum fetch_url_code init_fetch_url_result(struct fetch_url_result *r) {
+enum FETCH_URL_CODE init_fetch_url_result(struct fetch_url_result *r) {
 	r->ptr = (char*) malloc(1);
-	if(r->ptr == NULL) return MALLOC_ERR;
+	if(r->ptr == NULL) return FETCH_URL_E_MALLOC_ERR;
 
 	r->len = 0;
 	r->ptr[0] = '\0';
 
-	return OK;
+	return FETCH_URL_E_OK;
 }
 
-enum fetch_url_code destroy_fetch_url_result(struct fetch_url_result *r) {
-	if(r->ptr == NULL) return NULLPTR_ERR;
+enum FETCH_URL_CODE destroy_fetch_url_result(struct fetch_url_result *r) {
+	if(r->ptr == NULL) return FETCH_URL_E_NULLPTR_ERR;
 
 	free(r->ptr);
 	r->len = -1;
 
-	return OK;
+	return FETCH_URL_E_OK;
 }
 
 size_t fetch_url_curl_writefunc(void *ptr, size_t size, size_t nmemb,

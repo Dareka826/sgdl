@@ -3,12 +3,11 @@
 
 #include <stdlib.h>
 
-enum fetch_url_code {
-	OK,
-	CURL_ERR,
-	MALLOC_ERR,
-	NULLPTR_ERR,
-
+enum FETCH_URL_CODE {
+	FETCH_URL_E_OK,
+	FETCH_URL_E_CURL_ERR,
+	FETCH_URL_E_MALLOC_ERR,
+	FETCH_URL_E_NULLPTR_ERR
 };
 
 struct fetch_url_result {
@@ -16,9 +15,9 @@ struct fetch_url_result {
 	size_t len;
 };
 
-enum fetch_url_code fetch_url(char *url, struct fetch_url_result *result);
+enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result);
 
-enum fetch_url_code init_fetch_url_result(struct fetch_url_result *r);
-enum fetch_url_code destroy_fetch_url_result(struct fetch_url_result *r);
+enum FETCH_URL_CODE init_fetch_url_result(struct fetch_url_result *r);
+enum FETCH_URL_CODE destroy_fetch_url_result(struct fetch_url_result *r);
 
 #endif
