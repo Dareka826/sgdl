@@ -19,7 +19,7 @@ enum SGDL_CODE sgdl_get_image(unsigned int id, char *result_url, size_t result_u
 	if(init_fetch_url_result(&r) != FETCH_URL_E_OK)
 		return SGDL_E_FETCH_URL_ERR;
 
-	if(fetch_url(url, &r) != FETCH_URL_E_OK)
+	if(fetch_url(url, &r, NULL) != FETCH_URL_E_OK)
 		return SGDL_E_FETCH_URL_ERR;
 
 	// Find the original image url in html data

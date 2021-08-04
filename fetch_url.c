@@ -9,7 +9,7 @@ void destroy_fetch_url_result(struct fetch_url_result *r);
 size_t fetch_url_curl_writefunc(void *ptr, size_t size, size_t nmemb,
 		struct fetch_url_result *r);
 
-enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result) {
+enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result, char *cookie) {
 	enum FETCH_URL_CODE ret = FETCH_URL_E_OK;
 
 	CURL *curl = curl_easy_init();
@@ -18,6 +18,9 @@ enum FETCH_URL_CODE fetch_url(char *url, struct fetch_url_result *result) {
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
+
+	if(cookie != NULL)
+		curl_easy_setopt(curl, CURLOPT_COOKIE, cookie);
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fetch_url_curl_writefunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, result);
