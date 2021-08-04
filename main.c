@@ -261,7 +261,7 @@ enum SGDL_CODE process_ids(int optc, struct option *options, int argc, char **ar
 
 			if(result_ids != NULL) {
 				result_ids = (int*) realloc(result_ids,
-										sizeof(int) * (num_results++));
+										sizeof(int) * (++num_results));
 
 			} else {
 				num_results = 1;
