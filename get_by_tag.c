@@ -11,6 +11,9 @@
 enum SGDL_CODE sgdl_get_by_tag(char *query, int fringe, int start_page,
 		int end_page, int **result_ids, int *num_results) {
 
+	*result_ids = NULL;
+	*num_results = 0;
+
 	// Make sure page values are correct
 	if(start_page < 0) start_page = 0;
 	if(start_page > SGDL_GELBOORU_PAGE_LIMIT)
@@ -83,7 +86,7 @@ enum SGDL_CODE sgdl_get_by_tag(char *query, int fringe, int start_page,
 			char result[match_len];
 
 			strncpy(result, cursor+matches[1].rm_so, match_len-1);
-			result[match_len] = '\0';
+			result[match_len-1] = '\0';
 
 			cursor += matches[1].rm_eo; // Move start to end of match
 
