@@ -101,6 +101,13 @@ int main(int argc, char **argv) {
 	if(parse_opts(ARR_LEN(options), options, argc-2, argv+2) != EXIT_SUCCESS)
 		return EXIT_FAILURE;
 
+	// Check if help is set
+	for(int i = 0; i < ARR_LEN(options); i++)
+		if(options[i].letter == 'h' && options[i].is_true) {
+			usage(argv[0]);
+			return EXIT_SUCCESS;
+		}
+
 	int first_non_opt = 2;
 	for(int i = 0; i < ARR_LEN(options); i++) {
 		struct option opt = options[i];
