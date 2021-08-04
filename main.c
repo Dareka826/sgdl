@@ -3,6 +3,7 @@
 #include <string.h>
 #include "get_image.h"
 #include "get_by_tag.h"
+#include "dl_url.h"
 
 #define ARR_LEN(arr) ( sizeof(arr) / sizeof(arr[0]) )
 
@@ -90,6 +91,8 @@ int main(int argc, char **argv) {
 
 	struct option_conflict opt_conflicts[] = {
 		{ 'd', 'u' },
+		{ 'i', 'd' },
+		{ 'i', 'u' },
 		{ 's', 'p' },
 		{ 'e', 'p' }
 	};
@@ -315,10 +318,21 @@ enum SGDL_CODE process_id_list(int optc, struct option *options, int argc, int *
 			url = error_str;
 		}
 
-		if(print_id_url)
-			printf("[%d]: %s\n", args[i], url);
-		else
-			printf("%s\n", url);
+		if(!dl_files) {
+			if(print_id_url)
+				printf("[%d]: %s\n", args[i], url);
+			else
+				printf("%s\n", url);
+
+		} else {
+			char id[10];
+			snprintf(id, sizeof(id), "%d", args[i]);
+
+			if(dl_url(url, id) != DL_URL_E_OK) {
+				fprintf(stderr, "[E] dl_url failed");
+				ret = SGDL_E_DL_URL_ERR;
+			}
+		}
 
 		if(url != NULL && url != error_str)
 			free(url);

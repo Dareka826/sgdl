@@ -16,7 +16,7 @@ Run `redo` to build
 * [x] get_image
 * [x] command line options
 * [x] get_by_tags
-* [ ] implement downloading to files
+* [x] implement downloading to files
 * [ ] add verbose mode
 * [ ] threads
 * [ ] circumvent page limit by limiting id range
