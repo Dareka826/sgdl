@@ -1,6 +1,7 @@
 .redo
 
 *.txt
+
 *.sh
 !config.sh
 
