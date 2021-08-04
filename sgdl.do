@@ -1,4 +1,7 @@
-OBJ="fetch_url.o get_image.o main.o"
+redo-ifchange config.sh
+. ./config.sh
 
+OBJ="fetch_url.o get_image.o main.o"
 redo-ifchange $OBJ
-gcc -lcurl $OBJ -o $3
+
+gcc $LDFLAGS $OBJ -o $3
