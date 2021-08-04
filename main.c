@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
 		{ 'u', 0, { 0 }    }, // Don't print ida with urls
 		{ 'h', 0, { 0 }    }, // Show help
 		{ 'f', 0, { 0 }    }, // Enable fringe content
+		{ 'i', 0, { 0 }    }, // Only get ids from tag mode
 		{ 'p', 1, { NULL } }, // Page id for tag mode
 		{ 's', 1, { NULL } }, // Page range start for tag mode
 		{ 'e', 1, { NULL } }  // Page range end for tag mode
@@ -162,6 +163,7 @@ void usage(char *progname) {
 
 	fprintf(stderr, "Tag Options:\n");
 	fprintf(stderr, "    -f\t\tEnable fringe results\n");
+	fprintf(stderr, "    -i\t\tPrint ids without getting urls\n");
 	fprintf(stderr, "    -p\t\tPage id\n");
 	fprintf(stderr, "    -s\t\tPage range start\n");
 	fprintf(stderr, "    -e\t\tPage range end\n");
@@ -351,12 +353,16 @@ enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **a
 	// Determine page range (-1 means unrestricted) and fringe content
 	int page_range[2] = { -1, -1 };
 	int enable_fringe = 0;
+	int process_urls = 1;
 
 	for(int i = 0; i < optc; i++) {
 		struct option opt = options[i];
 
 		if(opt.letter == 'f') {
 			enable_fringe = opt.is_true;
+
+		} else if(opt.letter == 'i') {
+			process_urls = !opt.is_true;
 
 		} else if(opt.letter == 'p' && opt.arg != NULL) {
 			if(is_digits(opt.arg))
@@ -383,8 +389,12 @@ enum SGDL_CODE process_tags(int optc, struct option *options, int argc, char **a
 	if(sgdl_get_by_tag(query, enable_fringe, page_range[0], page_range[1],
 			&result_ids, &num_results) == SGDL_E_OK) {
 
-		if(process_id_list(optc, options, num_results, result_ids) != SGDL_E_OK)
-			ret = SGDL_E_ERR;
+		if(process_urls) {
+			if(process_id_list(optc, options, num_results, result_ids) != SGDL_E_OK)
+				ret = SGDL_E_ERR;
+		} else
+			for(int i = 0; i < num_results; i++)
+				printf("%d\n", result_ids[i]);
 
 	} else ret = SGDL_E_ERR;
 
