@@ -1,4 +1,4 @@
 
 CFLAGS="-Wall -g"
-LDFLAGS="-lcurl"
+LDFLAGS="-g -lcurl"
 
