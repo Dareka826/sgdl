@@ -2,6 +2,8 @@
 
 A program that I made to download all pictures from a specified tag or id/ids, because I couldn't find a way to get multiple pages by tag with the official API
 
+You should probably use [mikf/gallery-dl](https://github.com/mikf/gallery-dl) instead
+
 # Requirements
 - libcurl
 - regex
