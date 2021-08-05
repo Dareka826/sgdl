@@ -1,5 +1,6 @@
-redo-ifchange config.sh
+redo-ifchange config.sh .env
 . ./config.sh
+. ./.env
 
 redo-ifchange $2.c
 
